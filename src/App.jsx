@@ -6,6 +6,7 @@ import Menu from './pages/Menu';
 import Order from './pages/Order';
 import Pickup from './pages/Pickup';
 import Contact from './pages/Contact';
+import Admin from './pages/Admin';
 
 const App = () => {
   const [currentPage, setCurrentPage] = useState('home');
@@ -58,6 +59,8 @@ const App = () => {
         return <Pickup />;
       case 'contact':
         return <Contact />;
+      case 'admin':
+        return <Admin />;
       default:
         return <Home setCurrentPage={setCurrentPage} />;
     }
@@ -69,7 +72,7 @@ const App = () => {
       <main className="flex-grow">
         {renderPage()}
       </main>
-      <Footer />
+      <Footer setCurrentPage={setCurrentPage} />
     </div>
   );
 };

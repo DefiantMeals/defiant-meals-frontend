@@ -1,9 +1,106 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const Order = ({ cartItems, handleUpdateQuantity, handleRemoveFromCart }) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [orderSubmitted, setOrderSubmitted] = useState(false);
+  const [orderError, setOrderError] = useState('');
+  const [customerInfo, setCustomerInfo] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: ''
+  });
+
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const tax = subtotal * 0.08; // 8% tax
   const total = subtotal + tax;
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setCustomerInfo(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const submitOrder = async () => {
+    if (!customerInfo.name || !customerInfo.email || !customerInfo.phone) {
+      setOrderError('Please fill in all required fields');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setOrderError('');
+
+    const orderData = {
+      customer: customerInfo,
+      items: cartItems.map(item => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity
+      })),
+      subtotal: subtotal,
+      tax: tax,
+      total: total,
+      orderDate: new Date().toISOString()
+    };
+
+    try {
+      const response = await fetch('http://localhost:5000/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('Order submitted successfully:', result);
+      setOrderSubmitted(true);
+      
+      // Clear cart after successful order
+      cartItems.forEach(item => handleRemoveFromCart(item.id));
+      
+    } catch (error) {
+      console.error('Error submitting order:', error);
+      setOrderError('Failed to submit order. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (orderSubmitted) {
+    return (
+      <div className="min-h-screen py-16">
+        <div className="container mx-auto px-4 text-center">
+          <div className="bg-green-50 rounded-lg p-12 max-w-2xl mx-auto">
+            <div className="text-6xl mb-4">✅</div>
+            <h2 className="text-3xl font-bold text-green-800 mb-4">Order Submitted Successfully!</h2>
+            <p className="text-lg text-green-700 mb-6">
+              Thank you for your order! We've received your order and will begin preparing it shortly.
+            </p>
+            <p className="text-gray-600 mb-8">
+              You'll receive a confirmation email at {customerInfo.email} with your order details.
+            </p>
+            <button 
+              onClick={() => {
+                setOrderSubmitted(false);
+                setCustomerInfo({ name: '', email: '', phone: '', address: '' });
+              }}
+              className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-300"
+            >
+              Place Another Order
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (cartItems.length === 0) {
     return (
@@ -33,7 +130,84 @@ const Order = ({ cartItems, handleUpdateQuantity, handleRemoveFromCart }) => {
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-6">
+            {/* Customer Information Form */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-2xl font-semibold mb-6">Customer Information</h2>
+              
+              {orderError && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-red-700">{orderError}</p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    value={customerInfo.name}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter your full name"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                    Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={customerInfo.email}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter your email"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                    Phone Number *
+                  </label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    value={customerInfo.phone}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter your phone number"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
+                    Delivery Address
+                  </label>
+                  <input
+                    type="text"
+                    id="address"
+                    name="address"
+                    value={customerInfo.address}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter delivery address (optional)"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Cart Items */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-2xl font-semibold mb-6">Cart Items</h2>
               
@@ -106,8 +280,16 @@ const Order = ({ cartItems, handleUpdateQuantity, handleRemoveFromCart }) => {
               </div>
               
               <div className="space-y-3">
-                <button className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-300">
-                  Proceed to Checkout
+                <button 
+                  onClick={submitOrder}
+                  disabled={isSubmitting}
+                  className={`w-full py-3 rounded-lg font-semibold transition duration-300 ${
+                    isSubmitting 
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-blue-600 hover:bg-blue-700'
+                  } text-white`}
+                >
+                  {isSubmitting ? 'Submitting Order...' : 'Submit Order'}
                 </button>
                 <button className="w-full bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition duration-300">
                   Continue Shopping
