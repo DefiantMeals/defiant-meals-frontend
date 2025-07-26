@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
-// API functions (you'll need to create this file or include these functions)
-const API_BASE_URL = '/api/menu';
+// ✅ Update to full backend URL
+const API_BASE_URL = 'https://defiant-meals-backend.onrender.com/menu';
 
 const fetchMenuItems = async () => {
   const response = await fetch(API_BASE_URL);
@@ -81,7 +81,7 @@ const Admin = () => {
     e.preventDefault();
     try {
       if (editingItem) {
-        await updateMenuItem(editingItem.id, formData);
+        await updateMenuItem(editingItem._id, formData); // 🔄 ID field depends on backend
       } else {
         await addMenuItem(formData);
       }
@@ -162,21 +162,23 @@ const Admin = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-800 mb-8">Menu Administration</h1>
-        
+
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             {error}
           </div>
         )}
 
-        {/* Add/Edit Form */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold">
               {editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}
             </h2>
             <button
-              onClick={() => setShowAddForm(!showAddForm)}
+              onClick={() => {
+                resetForm();
+                setShowAddForm(!showAddForm);
+              }}
               className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition duration-300"
             >
               {showAddForm ? 'Cancel' : 'Add New Item'}
@@ -186,9 +188,7 @@ const Admin = () => {
           {showAddForm && (
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Item Name *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Item Name *</label>
                 <input
                   type="text"
                   name="name"
@@ -200,9 +200,7 @@ const Admin = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Price *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Price *</label>
                 <input
                   type="number"
                   name="price"
@@ -216,9 +214,7 @@ const Admin = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Category
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
                 <input
                   type="text"
                   name="category"
@@ -242,9 +238,7 @@ const Admin = () => {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
                 <textarea
                   name="description"
                   value={formData.description}
@@ -275,90 +269,54 @@ const Admin = () => {
           )}
         </div>
 
-        {/* Menu Items List */}
         <div className="bg-white rounded-lg shadow-md">
           <div className="p-6 border-b border-gray-200">
             <h2 className="text-xl font-semibold">Current Menu Items</h2>
           </div>
-          
+
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Category
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Price
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {menuItems.map((item) => (
-                  <tr key={item.id}>
+                  <tr key={item._id}>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{item.name}</div>
-                        {item.description && (
-                          <div className="text-sm text-gray-500">{item.description}</div>
-                        )}
-                      </div>
+                      <div className="text-sm font-medium text-gray-900">{item.name}</div>
+                      {item.description && <div className="text-sm text-gray-500">{item.description}</div>}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {item.category || 'No category'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ${parseFloat(item.price).toFixed(2)}
-                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.category || 'No category'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${parseFloat(item.price).toFixed(2)}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        item.available 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
+                        item.available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                       }`}>
                         {item.available ? 'Available' : 'Unavailable'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                      <button
-                        onClick={() => handleEdit(item)}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleToggleAvailability(item.id)}
-                        className={`${
-                          item.available ? 'text-yellow-600 hover:text-yellow-900' : 'text-green-600 hover:text-green-900'
-                        }`}
-                      >
+                      <button onClick={() => handleEdit(item)} className="text-blue-600 hover:text-blue-900">Edit</button>
+                      <button onClick={() => handleToggleAvailability(item._id)} className={`${
+                        item.available ? 'text-yellow-600 hover:text-yellow-900' : 'text-green-600 hover:text-green-900'
+                      }`}>
                         {item.available ? 'Disable' : 'Enable'}
                       </button>
-                      <button
-                        onClick={() => handleDelete(item.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
+                      <button onClick={() => handleDelete(item._id)} className="text-red-600 hover:text-red-900">Delete</button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            
+
             {menuItems.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                No menu items found. Add your first item above!
-              </div>
+              <div className="text-center py-8 text-gray-500">No menu items found. Add your first item above!</div>
             )}
           </div>
         </div>
@@ -368,3 +326,4 @@ const Admin = () => {
 };
 
 export default Admin;
+
