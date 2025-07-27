@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
 
-// ✅ Update to full backend URL
-const API_BASE_URL = 'https://defiant-meals-backend.onrender.com/menu';
+const API_BASE_URL = 'https://defiant-meals-backend.onrender.com/api/menu';
 
 const fetchMenuItems = async () => {
-  const response = await fetch(API_BASE_URL);
-  if (!response.ok) throw new Error('Failed to fetch menu items');
-  return await response.json();
+  try {
+    console.log('Fetching from:', API_BASE_URL);
+    const response = await fetch(API_BASE_URL);
+    console.log('Response status:', response.status);
+    if (!response.ok) throw new Error(`Failed to fetch menu items: ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    console.error('Fetch error:', error);
+    throw error;
+  }
 };
 
 const addMenuItem = async (menuItem) => {
@@ -70,7 +76,7 @@ const Admin = () => {
       setMenuItems(items);
       setError(null);
     } catch (err) {
-      setError('Failed to load menu items');
+      setError(`Failed to load menu items: ${err.message}`);
       console.error(err);
     } finally {
       setLoading(false);
@@ -81,7 +87,7 @@ const Admin = () => {
     e.preventDefault();
     try {
       if (editingItem) {
-        await updateMenuItem(editingItem._id, formData); // 🔄 ID field depends on backend
+        await updateMenuItem(editingItem._id, formData);
       } else {
         await addMenuItem(formData);
       }
@@ -287,7 +293,7 @@ const Admin = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {menuItems.map((item) => (
-                  <tr key={item._id}>
+                  <tr key={item._id || item.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{item.name}</div>
                       {item.description && <div className="text-sm text-gray-500">{item.description}</div>}
@@ -303,12 +309,12 @@ const Admin = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                       <button onClick={() => handleEdit(item)} className="text-blue-600 hover:text-blue-900">Edit</button>
-                      <button onClick={() => handleToggleAvailability(item._id)} className={`${
+                      <button onClick={() => handleToggleAvailability(item._id || item.id)} className={`${
                         item.available ? 'text-yellow-600 hover:text-yellow-900' : 'text-green-600 hover:text-green-900'
                       }`}>
                         {item.available ? 'Disable' : 'Enable'}
                       </button>
-                      <button onClick={() => handleDelete(item._id)} className="text-red-600 hover:text-red-900">Delete</button>
+                      <button onClick={() => handleDelete(item._id || item.id)} className="text-red-600 hover:text-red-900">Delete</button>
                     </td>
                   </tr>
                 ))}
@@ -326,4 +332,3 @@ const Admin = () => {
 };
 
 export default Admin;
-
