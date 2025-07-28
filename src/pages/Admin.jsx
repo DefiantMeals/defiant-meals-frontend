@@ -4,9 +4,7 @@ const API_BASE_URL = 'https://defiant-meals-backend.onrender.com/api/menu';
 
 const fetchMenuItems = async () => {
   try {
-    console.log('Fetching from:', API_BASE_URL);
     const response = await fetch(API_BASE_URL);
-    console.log('Response status:', response.status);
     if (!response.ok) throw new Error(`Failed to fetch menu items: ${response.status}`);
     return await response.json();
   } catch (error) {
@@ -89,7 +87,7 @@ const Admin = () => {
       if (editingItem) {
         await updateMenuItem(editingItem._id, formData);
       } else {
-        await addMenuItem(formData);
+        await addMenuItem({ ...formData, createdBy: 'admin' }); // ✅ Add createdBy
       }
       await loadMenuItems();
       resetForm();
