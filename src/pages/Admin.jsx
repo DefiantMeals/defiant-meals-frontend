@@ -202,13 +202,19 @@ const Admin = () => {
                 required
                 className="p-2 border rounded"
               />
-              <input
+              <select
                 name="category"
                 value={formData.category}
                 onChange={handleInputChange}
-                placeholder="Category (e.g., High Protein)"
+                required
                 className="p-2 border rounded"
-              />
+              >
+                <option value="">Select Category</option>
+                <option value="High Protein">High Protein</option>
+                <option value="Quality Carbs">Quality Carbs</option>
+                <option value="Healthier Options">Healthier Options</option>
+                <option value="Snacks">Snacks</option>
+              </select>
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
@@ -262,7 +268,9 @@ const Admin = () => {
               <tr key={item._id} className="border-t">
                 <td className="py-2 px-4">
                   <strong>{item.name}</strong>
-                  <div className="text-sm text-gray-500">{item.description}</div>
+                  <div className="text-sm text-gray-500">
+                    {item.description}
+                  </div>
                 </td>
                 <td className="py-2 px-4">{item.category}</td>
                 <td className="py-2 px-4">
