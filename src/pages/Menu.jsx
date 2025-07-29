@@ -1,23 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const Menu = ({ handleAddToCart }) => {
+  const [menuItems, setMenuItems] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [loading, setLoading] = useState(true);
 
-  // Empty menuItems array — ready for your real content
-  const menuItems = [];
-
-  // Updated category filters
   const categories = [
     { id: 'all', name: 'All Items' },
-    { id: 'high-protein', name: 'High Protein' },
-    { id: 'quality-carbs', name: 'Quality Carbs' },
-    { id: 'healthier-options', name: 'Healthier Options' },
+    { id: 'high protein', name: 'High Protein' },
+    { id: 'quality carbs', name: 'Quality Carbs' },
+    { id: 'healthier options', name: 'Healthier Options' },
     { id: 'snacks', name: 'Snacks' }
   ];
 
-  const filteredItems = selectedCategory === 'all' 
-    ? menuItems 
-    : menuItems.filter(item => item.category === selectedCategory);
+  useEffect(() => {
+    const fetchMenuItems = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/menu`);
+        const data = await response.json();
+        setMenuItems(data);
+      } catch (err) {
+        console.error('Failed to load menu items:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMenuItems();
+  }, []);
+
+  const filteredItems = selectedCategory === 'all'
+    ? menuItems
+    : menuItems.filter(item =>
+        item.category?.toLowerCase().trim() === selectedCategory.toLowerCase()
+      );
 
   return (
     <div className="min-h-screen py-8">
@@ -48,20 +66,20 @@ const Menu = ({ handleAddToCart }) => {
         {/* Menu Items Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredItems.map(item => (
-            <div key={item.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition duration-300">
+            <div key={item._id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition duration-300">
               <div className="p-6">
-                <div className="text-6xl text-center mb-4">{item.image}</div>
+                {item.image && <img src={item.image} alt={item.name} className="w-full h-40 object-cover rounded mb-4" />}
                 <h3 className="text-xl font-semibold mb-2">{item.name}</h3>
                 <p className="text-gray-600 mb-4">{item.description}</p>
-                
+
                 <div className="flex justify-between items-center mb-4">
                   <div className="text-sm text-gray-500">
-                    <span className="mr-4">{item.calories} cal</span>
-                    <span>{item.protein} protein</span>
+                    {item.calories && <span className="mr-4">{item.calories} cal</span>}
+                    {item.protein && <span>{item.protein} protein</span>}
                   </div>
-                  <span className="text-2xl font-bold text-blue-600">${item.price}</span>
+                  <span className="text-2xl font-bold text-blue-600">${parseFloat(item.price).toFixed(2)}</span>
                 </div>
-                
+
                 <button
                   onClick={() => handleAddToCart(item)}
                   className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-300"
@@ -73,7 +91,7 @@ const Menu = ({ handleAddToCart }) => {
           ))}
         </div>
 
-        {filteredItems.length === 0 && (
+        {!loading && filteredItems.length === 0 && (
           <div className="text-center py-12">
             <p className="text-xl text-gray-500">No items found in this category.</p>
           </div>
