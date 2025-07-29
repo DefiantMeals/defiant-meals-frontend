@@ -3,95 +3,16 @@ import React, { useState } from 'react';
 const Menu = ({ handleAddToCart }) => {
   const [selectedCategory, setSelectedCategory] = useState('all');
 
-  const menuItems = [
-    {
-      id: 1,
-      name: "Grilled Salmon Bowl",
-      category: "main",
-      price: 16.99,
-      description: "Fresh Atlantic salmon with quinoa, roasted vegetables, and lemon herb dressing",
-      image: "🐟",
-      calories: 450,
-      protein: "35g"
-    },
-    {
-      id: 2,
-      name: "Mediterranean Chicken Wrap",
-      category: "main",
-      price: 12.99,
-      description: "Grilled chicken, hummus, cucumber, tomatoes, and feta in a whole wheat wrap",
-      image: "🌯",
-      calories: 380,
-      protein: "28g"
-    },
-    {
-      id: 3,
-      name: "Quinoa Power Bowl",
-      category: "vegetarian",
-      price: 14.99,
-      description: "Superfood bowl with quinoa, avocado, chickpeas, kale, and tahini dressing",
-      image: "🥗",
-      calories: 420,
-      protein: "18g"
-    },
-    {
-      id: 4,
-      name: "Green Goddess Smoothie",
-      category: "drinks",
-      price: 8.99,
-      description: "Spinach, mango, banana, coconut water, and chia seeds",
-      image: "🥤",
-      calories: 220,
-      protein: "8g"
-    },
-    {
-      id: 5,
-      name: "Protein Pancakes",
-      category: "breakfast",
-      price: 11.99,
-      description: "High-protein pancakes with berries, Greek yogurt, and maple syrup",
-      image: "🥞",
-      calories: 350,
-      protein: "25g"
-    },
-    {
-      id: 6,
-      name: "Acai Energy Bowl",
-      category: "breakfast",
-      price: 13.99,
-      description: "Acai base topped with granola, fresh berries, coconut, and honey",
-      image: "🍇",
-      calories: 320,
-      protein: "12g"
-    },
-    {
-      id: 7,
-      name: "Turkey & Avocado Sandwich",
-      category: "main",
-      price: 10.99,
-      description: "Lean turkey, avocado, lettuce, tomato on whole grain bread",
-      image: "🥪",
-      calories: 340,
-      protein: "24g"
-    },
-    {
-      id: 8,
-      name: "Chocolate Protein Shake",
-      category: "drinks",
-      price: 9.99,
-      description: "Rich chocolate protein shake with almond butter and banana",
-      image: "🍫",
-      calories: 280,
-      protein: "30g"
-    }
-  ];
+  // Empty menuItems array — ready for your real content
+  const menuItems = [];
 
+  // Updated category filters
   const categories = [
     { id: 'all', name: 'All Items' },
-    { id: 'breakfast', name: 'Breakfast' },
-    { id: 'main', name: 'Main Dishes' },
-    { id: 'vegetarian', name: 'Vegetarian' },
-    { id: 'drinks', name: 'Drinks' }
+    { id: 'high-protein', name: 'High Protein' },
+    { id: 'quality-carbs', name: 'Quality Carbs' },
+    { id: 'healthier-options', name: 'Healthier Options' },
+    { id: 'snacks', name: 'Snacks' }
   ];
 
   const filteredItems = selectedCategory === 'all' 

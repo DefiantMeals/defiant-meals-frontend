@@ -1,16 +1,11 @@
 import React, { useState, useEffect } from 'react';
 
-const API_BASE_URL = 'https://defiant-meals-backend.onrender.com/api/menu';
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/api/menu`;
 
 const fetchMenuItems = async () => {
-  try {
-    const response = await fetch(API_BASE_URL);
-    if (!response.ok) throw new Error(`Failed to fetch menu items: ${response.status}`);
-    return await response.json();
-  } catch (error) {
-    console.error('Fetch error:', error);
-    throw error;
-  }
+  const response = await fetch(API_BASE_URL);
+  if (!response.ok) throw new Error('Failed to fetch menu items');
+  return await response.json();
 };
 
 const addMenuItem = async (menuItem) => {
@@ -35,7 +30,7 @@ const updateMenuItem = async (id, menuItem) => {
 
 const deleteMenuItem = async (id) => {
   const response = await fetch(`${API_BASE_URL}/${id}`, {
-    method: 'DELETE',
+    method: 'DELETE'
   });
   if (!response.ok) throw new Error('Failed to delete menu item');
   return await response.json();
@@ -43,7 +38,7 @@ const deleteMenuItem = async (id) => {
 
 const toggleMenuItemAvailability = async (id) => {
   const response = await fetch(`${API_BASE_URL}/${id}/toggle`, {
-    method: 'PATCH',
+    method: 'PATCH'
   });
   if (!response.ok) throw new Error('Failed to toggle menu item');
   return await response.json();
@@ -75,7 +70,6 @@ const Admin = () => {
       setError(null);
     } catch (err) {
       setError(`Failed to load menu items: ${err.message}`);
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -87,14 +81,12 @@ const Admin = () => {
       if (editingItem) {
         await updateMenuItem(editingItem._id, formData);
       } else {
-        await addMenuItem({ ...formData, createdBy: 'admin' }); // ✅ Add createdBy
+        await addMenuItem({ ...formData, createdBy: 'admin' });
       }
       await loadMenuItems();
       resetForm();
-      setError(null);
     } catch (err) {
       setError(editingItem ? 'Failed to update item' : 'Failed to add item');
-      console.error(err);
     }
   };
 
@@ -115,10 +107,8 @@ const Admin = () => {
       try {
         await deleteMenuItem(id);
         await loadMenuItems();
-        setError(null);
       } catch (err) {
         setError('Failed to delete item');
-        console.error(err);
       }
     }
   };
@@ -127,10 +117,8 @@ const Admin = () => {
     try {
       await toggleMenuItemAvailability(id);
       await loadMenuItems();
-      setError(null);
     } catch (err) {
       setError('Failed to toggle availability');
-      console.error(err);
     }
   };
 
@@ -142,8 +130,8 @@ const Admin = () => {
       category: '',
       available: true
     });
-    setShowAddForm(false);
     setEditingItem(null);
+    setShowAddForm(false);
   };
 
   const handleInputChange = (e) => {
@@ -154,176 +142,79 @@ const Admin = () => {
     }));
   };
 
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">Loading menu items...</div>
-      </div>
-    );
-  }
+  if (loading) return <div className="text-center py-8">Loading...</div>;
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-800 mb-8">Menu Administration</h1>
 
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-          </div>
-        )}
+        {error && <div className="text-red-600 mb-4">{error}</div>}
 
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">
-              {editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}
-            </h2>
-            <button
-              onClick={() => {
-                resetForm();
-                setShowAddForm(!showAddForm);
-              }}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition duration-300"
-            >
+            <h2 className="text-xl font-semibold">{editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}</h2>
+            <button onClick={() => { resetForm(); setShowAddForm(!showAddForm); }}
+              className="bg-blue-600 text-white px-4 py-2 rounded">
               {showAddForm ? 'Cancel' : 'Add New Item'}
             </button>
           </div>
 
           {showAddForm && (
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Item Name *</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Price *</label>
-                <input
-                  type="number"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleInputChange}
-                  step="0.01"
-                  min="0"
-                  required
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                <input
-                  type="text"
-                  name="category"
-                  value={formData.category}
-                  onChange={handleInputChange}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div className="flex items-center">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    name="available"
-                    checked={formData.available}
-                    onChange={handleInputChange}
-                    className="mr-2"
-                  />
-                  Available
-                </label>
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  rows="3"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
+              <input name="name" value={formData.name} onChange={handleInputChange} placeholder="Item Name" required className="p-2 border rounded" />
+              <input name="price" value={formData.price} onChange={handleInputChange} type="number" step="0.01" placeholder="Price" required className="p-2 border rounded" />
+              <input name="category" value={formData.category} onChange={handleInputChange} placeholder="Category (e.g., High Protein)" className="p-2 border rounded" />
+              <label className="flex items-center space-x-2">
+                <input type="checkbox" name="available" checked={formData.available} onChange={handleInputChange} />
+                <span>Available</span>
+              </label>
+              <textarea name="description" value={formData.description} onChange={handleInputChange} rows="3" placeholder="Description" className="md:col-span-2 p-2 border rounded" />
               <div className="md:col-span-2 flex gap-4">
-                <button
-                  type="submit"
-                  className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition duration-300"
-                >
-                  {editingItem ? 'Update Item' : 'Add Item'}
-                </button>
-                {editingItem && (
-                  <button
-                    type="button"
-                    onClick={resetForm}
-                    className="bg-gray-600 text-white px-6 py-2 rounded hover:bg-gray-700 transition duration-300"
-                  >
-                    Cancel Edit
-                  </button>
-                )}
+                <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded">{editingItem ? 'Update' : 'Add'} Item</button>
+                {editingItem && <button onClick={resetForm} type="button" className="bg-gray-500 text-white px-4 py-2 rounded">Cancel</button>}
               </div>
             </form>
           )}
         </div>
 
-        <div className="bg-white rounded-lg shadow-md">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-xl font-semibold">Current Menu Items</h2>
-          </div>
+        <table className="min-w-full bg-white">
+          <thead>
+            <tr className="bg-gray-100">
+              <th className="py-2 px-4">Name</th>
+              <th className="py-2 px-4">Category</th>
+              <th className="py-2 px-4">Price</th>
+              <th className="py-2 px-4">Status</th>
+              <th className="py-2 px-4">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {menuItems.map(item => (
+              <tr key={item._id} className="border-t">
+                <td className="py-2 px-4">
+                  <strong>{item.name}</strong>
+                  <div className="text-sm text-gray-500">{item.description}</div>
+                </td>
+                <td className="py-2 px-4">{item.category}</td>
+                <td className="py-2 px-4">${parseFloat(item.price).toFixed(2)}</td>
+                <td className="py-2 px-4">
+                  <span className={`px-2 py-1 text-xs rounded-full ${item.available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    {item.available ? 'Available' : 'Unavailable'}
+                  </span>
+                </td>
+                <td className="py-2 px-4 space-x-2">
+                  <button onClick={() => handleEdit(item)} className="text-blue-600">Edit</button>
+                  <button onClick={() => handleToggleAvailability(item._id)} className="text-yellow-600">
+                    {item.available ? 'Disable' : 'Enable'}
+                  </button>
+                  <button onClick={() => handleDelete(item._id)} className="text-red-600">Delete</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {menuItems.map((item) => (
-                  <tr key={item._id || item.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{item.name}</div>
-                      {item.description && <div className="text-sm text-gray-500">{item.description}</div>}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.category || 'No category'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${parseFloat(item.price).toFixed(2)}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        item.available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                        {item.available ? 'Available' : 'Unavailable'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                      <button onClick={() => handleEdit(item)} className="text-blue-600 hover:text-blue-900">Edit</button>
-                      <button onClick={() => handleToggleAvailability(item._id || item.id)} className={`${
-                        item.available ? 'text-yellow-600 hover:text-yellow-900' : 'text-green-600 hover:text-green-900'
-                      }`}>
-                        {item.available ? 'Disable' : 'Enable'}
-                      </button>
-                      <button onClick={() => handleDelete(item._id || item.id)} className="text-red-600 hover:text-red-900">Delete</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            {menuItems.length === 0 && (
-              <div className="text-center py-8 text-gray-500">No menu items found. Add your first item above!</div>
-            )}
-          </div>
-        </div>
+        {menuItems.length === 0 && <div className="text-center py-6 text-gray-500">No menu items yet.</div>}
       </div>
     </div>
   );
