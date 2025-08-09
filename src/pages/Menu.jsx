@@ -35,6 +35,8 @@ const Menu = ({ handleAddToCart }) => {
       try {
         const response = await fetch(`${API_BASE_URL}/api/menu`);
         const data = await response.json();
+        console.log('Menu items from API:', data);
+        console.log('Items with imageUrl:', data.filter(item => item.imageUrl));
         setMenuItems(data);
       } catch (err) {
         console.error('Failed to load menu items:', err);
