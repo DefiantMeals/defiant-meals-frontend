@@ -2,6 +2,21 @@ import React, { useState, useEffect } from 'react';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
+// Google Drive URL converter function
+const convertGoogleDriveUrl = (url) => {
+  if (!url) return null;
+  
+  // Check if it's a Google Drive sharing URL
+  const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (match) {
+    const fileId = match[1];
+    return `https://drive.google.com/uc?export=view&id=${fileId}`;
+  }
+  
+  // Return original URL if it's not a Google Drive URL
+  return url;
+};
+
 const Menu = ({ handleAddToCart }) => {
   const [menuItems, setMenuItems] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All Items');
@@ -65,14 +80,30 @@ const Menu = ({ handleAddToCart }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredItems.map(item => (
             <div key={item._id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition duration-300">
-              <div className="p-6">
-                {item.image && (
+              {/* Image Section */}
+              {item.imageUrl && (
+                <div className="relative overflow-hidden">
                   <img
-                    src={item.image}
+                    src={convertGoogleDriveUrl(item.imageUrl)}
                     alt={item.name}
-                    className="w-full h-40 object-cover rounded mb-4"
+                    className="w-full h-48 object-cover hover:scale-105 transition duration-300"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.parentNode.style.display = 'none';
+                    }}
                   />
+                </div>
+              )}
+              
+              {/* Content Section */}
+              <div className="p-6">
+                {/* Placeholder for items without images */}
+                {!item.imageUrl && (
+                  <div className="w-full h-32 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg mb-4 flex items-center justify-center">
+                    <span className="text-blue-600 text-sm font-medium">🍽️ Delicious Meal</span>
+                  </div>
                 )}
+                
                 <h3 className="text-xl font-semibold mb-2">{item.name}</h3>
                 <p className="text-gray-600 mb-4">{item.description}</p>
 
