@@ -4,16 +4,21 @@ const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 // Google Drive URL converter function
 const convertGoogleDriveUrl = (url) => {
+  console.log('convertGoogleDriveUrl input:', url);
+  
   if (!url) return null;
   
   // Check if it's a Google Drive sharing URL
   const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
   if (match) {
     const fileId = match[1];
-    return `https://drive.google.com/uc?export=view&id=${fileId}`;
+    const result = 'https://drive.google.com/uc?export=view&id=' + fileId;
+    console.log('convertGoogleDriveUrl output:', result);
+    return result;
   }
   
   // Return original URL if it's not a Google Drive URL
+  console.log('convertGoogleDriveUrl: not a Google Drive URL, returning original');
   return url;
 };
 
