@@ -2,32 +2,6 @@ import React, { useState, useEffect } from 'react';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-// Google Drive URL converter function
-const convertGoogleDriveUrl = (url) => {
-  console.log('convertGoogleDriveUrl input:', url);
-  
-  if (!url) return null;
-  
-  // Check if it's already a converted Google Drive URL
-  if (url.includes('drive.google.com/uc?export=view&id=')) {
-    console.log('convertGoogleDriveUrl: already converted, returning as-is');
-    return url;
-  }
-  
-  // Check if it's a Google Drive sharing URL
-  const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-  if (match) {
-    const fileId = match[1];
-    const result = 'https://drive.google.com/uc?export=view&id=' + fileId;
-    console.log('convertGoogleDriveUrl output:', result);
-    return result;
-  }
-  
-  // Return original URL if it's not a Google Drive URL
-  console.log('convertGoogleDriveUrl: not a Google Drive URL, returning original');
-  return url;
-};
-
 const Menu = ({ handleAddToCart }) => {
   const [menuItems, setMenuItems] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All Items');
@@ -97,7 +71,7 @@ const Menu = ({ handleAddToCart }) => {
               {item.imageUrl && (
                 <div className="relative overflow-hidden">
                   <img
-                    src={convertGoogleDriveUrl(item.imageUrl)}
+                    src={item.imageUrl}
                     alt={item.name}
                     className="w-full h-48 object-cover hover:scale-105 transition duration-300"
                     onError={(e) => {
