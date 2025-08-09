@@ -44,6 +44,21 @@ const toggleMenuItemAvailability = async (id) => {
   return await response.json();
 };
 
+// Helper function to convert Google Drive sharing URL to direct image URL
+const convertGoogleDriveUrl = (url) => {
+  if (!url) return '';
+  
+  // Check if it's a Google Drive sharing URL
+  const match = url.match(/\/file\/d\/([a-zA-Z0-9-_]+)/);
+  if (match) {
+    const fileId = match[1];
+    return `https://drive.google.com/uc?export=view&id=${fileId}`;
+  }
+  
+  // Return original URL if it's not a Google Drive URL
+  return url;
+};
+
 const Admin = () => {
   const [menuItems, setMenuItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -55,6 +70,7 @@ const Admin = () => {
     description: '',
     price: '',
     category: '',
+    imageUrl: '', // Added image URL field
     available: true,
   });
 
@@ -78,15 +94,18 @@ const Admin = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const menuItemData = {
+        ...formData,
+        price: parseFloat(formData.price),
+        imageUrl: convertGoogleDriveUrl(formData.imageUrl), // Convert Google Drive URL
+      };
+
       if (editingItem) {
-        await updateMenuItem(editingItem._id, {
-          ...formData,
-          price: parseFloat(formData.price),
-        });
+        await updateMenuItem(editingItem._id, menuItemData);
+        loadMenuItems(); // Reload to see changes
       } else {
         const newItem = await addMenuItem({
-          ...formData,
-          price: parseFloat(formData.price),
+          ...menuItemData,
           createdBy: 'admin',
         });
         setMenuItems((prev) => [...prev, newItem]);
@@ -105,6 +124,7 @@ const Admin = () => {
       description: item.description || '',
       price: item.price.toString(),
       category: item.category || '',
+      imageUrl: item.imageUrl || '', // Include image URL in edit
       available: item.available,
     });
     setShowAddForm(true);
@@ -138,6 +158,7 @@ const Admin = () => {
       description: '',
       price: '',
       category: '',
+      imageUrl: '', // Reset image URL
       available: true,
     });
     setEditingItem(null);
@@ -218,6 +239,33 @@ const Admin = () => {
                 />
                 <span>Available</span>
               </label>
+              
+              {/* New Image URL field */}
+              <input
+                name="imageUrl"
+                value={formData.imageUrl}
+                onChange={handleInputChange}
+                placeholder="Image URL (paste Google Drive sharing link)"
+                className="md:col-span-2 p-2 border rounded"
+              />
+              
+              {/* Image preview */}
+              {formData.imageUrl && (
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Image Preview:
+                  </label>
+                  <img
+                    src={convertGoogleDriveUrl(formData.imageUrl)}
+                    alt="Preview"
+                    className="w-32 h-32 object-cover rounded border"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+              
               <textarea
                 name="description"
                 value={formData.description}
@@ -250,6 +298,7 @@ const Admin = () => {
         <table className="min-w-full bg-white">
           <thead>
             <tr className="bg-gray-100">
+              <th className="py-2 px-4">Image</th>
               <th className="py-2 px-4">Name</th>
               <th className="py-2 px-4">Category</th>
               <th className="py-2 px-4">Price</th>
@@ -260,6 +309,22 @@ const Admin = () => {
           <tbody>
             {menuItems.map((item) => (
               <tr key={item._id} className="border-t">
+                <td className="py-2 px-4">
+                  {item.imageUrl ? (
+                    <img
+                      src={convertGoogleDriveUrl(item.imageUrl)}
+                      alt={item.name}
+                      className="w-16 h-16 object-cover rounded"
+                      onError={(e) => {
+                        e.target.src = 'https://via.placeholder.com/64x64?text=No+Image';
+                      }}
+                    />
+                  ) : (
+                    <div className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500">
+                      No Image
+                    </div>
+                  )}
+                </td>
                 <td className="py-2 px-4">
                   <strong>{item.name}</strong>
                   <div className="text-sm text-gray-500">{item.description}</div>
