@@ -8,6 +8,12 @@ const convertGoogleDriveUrl = (url) => {
   
   if (!url) return null;
   
+  // Check if it's already a converted Google Drive URL
+  if (url.includes('drive.google.com/uc?export=view&id=')) {
+    console.log('convertGoogleDriveUrl: already converted, returning as-is');
+    return url;
+  }
+  
   // Check if it's a Google Drive sharing URL
   const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
   if (match) {
