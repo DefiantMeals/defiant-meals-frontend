@@ -33,9 +33,13 @@ const Menu = ({ handleAddToCart }) => {
     fetchMenuItems();
   }, []);
 
+  // Filter out disabled items first
+  const availableItems = menuItems.filter(item => item.available);
+
+  // Then filter by category
   const filteredItems = selectedCategory === 'All Items'
-    ? menuItems
-    : menuItems.filter(item => item.category === selectedCategory);
+    ? availableItems
+    : availableItems.filter(item => item.category === selectedCategory);
 
   return (
     <div className="min-h-screen py-8">
