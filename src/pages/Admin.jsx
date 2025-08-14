@@ -223,13 +223,19 @@ const Admin = () => {
                 required
                 className="p-2 border rounded"
               />
-              <input
+              <select
                 name="category"
                 value={formData.category}
                 onChange={handleInputChange}
-                placeholder="Category (e.g., High Protein)"
+                required
                 className="p-2 border rounded"
-              />
+              >
+                <option value="">Select a category...</option>
+                <option value="High Protein">High Protein</option>
+                <option value="Quality Carbs">Quality Carbs</option>
+                <option value="Healthier Options">Healthier Options</option>
+                <option value="Snacks">Snacks</option>
+              </select>
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
