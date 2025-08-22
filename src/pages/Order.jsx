@@ -7,8 +7,7 @@ const Order = ({ cartItems, handleUpdateQuantity, handleRemoveFromCart }) => {
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
     email: '',
-    phone: '',
-    address: ''
+    phone: ''
   });
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -90,7 +89,7 @@ const Order = ({ cartItems, handleUpdateQuantity, handleRemoveFromCart }) => {
             <button 
               onClick={() => {
                 setOrderSubmitted(false);
-                setCustomerInfo({ name: '', email: '', phone: '', address: '' });
+                setCustomerInfo({ name: '', email: '', phone: '' });
               }}
               className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-300"
             >
@@ -114,7 +113,10 @@ const Order = ({ cartItems, handleUpdateQuantity, handleRemoveFromCart }) => {
               Looks like you haven't added any items to your cart yet. 
               Browse our delicious menu to get started!
             </p>
-            <button className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-300">
+            <button 
+              onClick={() => window.location.href = '/menu'}
+              className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-300"
+            >
               Browse Menu
             </button>
           </div>
@@ -174,7 +176,7 @@ const Order = ({ cartItems, handleUpdateQuantity, handleRemoveFromCart }) => {
                   />
                 </div>
 
-                <div>
+                <div className="md:col-span-2">
                   <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
                     Phone Number *
                   </label>
@@ -187,21 +189,6 @@ const Order = ({ cartItems, handleUpdateQuantity, handleRemoveFromCart }) => {
                     required
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Enter your phone number"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
-                    Delivery Address
-                  </label>
-                  <input
-                    type="text"
-                    id="address"
-                    name="address"
-                    value={customerInfo.address}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter delivery address (optional)"
                   />
                 </div>
               </div>
@@ -291,18 +278,21 @@ const Order = ({ cartItems, handleUpdateQuantity, handleRemoveFromCart }) => {
                 >
                   {isSubmitting ? 'Submitting Order...' : 'Submit Order'}
                 </button>
-                <button className="w-full bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition duration-300">
+                <button 
+                  onClick={() => window.location.href = '/menu'}
+                  className="w-full bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition duration-300"
+                >
                   Continue Shopping
                 </button>
               </div>
               
-              {/* Delivery Info */}
+              {/* Pickup Info */}
               <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-semibold mb-2">Delivery Information</h3>
+                <h3 className="font-semibold mb-2">Pickup Information</h3>
                 <div className="text-sm text-gray-600 space-y-1">
-                  <p>📦 Free delivery on orders over $25</p>
-                  <p>⏰ Estimated delivery: 25-35 minutes</p>
-                  <p>📍 Delivering to your location</p>
+                  <p>📦 Order ready for pickup in 15-25 minutes</p>
+                  <p>📍 123 Main Street, Your City</p>
+                  <p>📞 (555) 123-4567</p>
                 </div>
               </div>
             </div>

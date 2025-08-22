@@ -42,7 +42,7 @@ const Menu = ({ handleAddToCart }) => {
     : availableItems.filter(item => item.category === selectedCategory);
 
   return (
-    <div className="min-h-screen py-8">
+    <div className="min-h-screen py-8"> 
       <div className="container mx-auto px-4">
         <h1 className="text-4xl font-bold text-center mb-8">Our Menu</h1>
         <p className="text-xl text-gray-600 text-center mb-12 max-w-2xl mx-auto">
