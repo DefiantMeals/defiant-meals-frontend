@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const Order = ({ cartItems, handleUpdateQuantity, handleRemoveFromCart }) => {
+const Order = ({ cartItems, handleUpdateQuantity, handleRemoveFromCart, setCurrentPage }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderSubmitted, setOrderSubmitted] = useState(false);
   const [orderError, setOrderError] = useState('');
@@ -114,7 +114,7 @@ const Order = ({ cartItems, handleUpdateQuantity, handleRemoveFromCart }) => {
               Browse our delicious menu to get started!
             </p>
             <button 
-              onClick={() => window.location.href = '/menu'}
+              onClick={() => setCurrentPage('menu')}
               className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-300"
             >
               Browse Menu
@@ -279,7 +279,7 @@ const Order = ({ cartItems, handleUpdateQuantity, handleRemoveFromCart }) => {
                   {isSubmitting ? 'Submitting Order...' : 'Submit Order'}
                 </button>
                 <button 
-                  onClick={() => window.location.href = '/menu'}
+                  onClick={() => setCurrentPage('menu')}
                   className="w-full bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition duration-300"
                 >
                   Continue Shopping
