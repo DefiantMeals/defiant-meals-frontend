@@ -54,6 +54,7 @@ const App = () => {
           cartItems={cartItems}
           handleUpdateQuantity={handleUpdateQuantity}
           handleRemoveFromCart={handleRemoveFromCart}
+          setCurrentPage={setCurrentPage}
         />;
       case 'pickup':
         return <Pickup />;
