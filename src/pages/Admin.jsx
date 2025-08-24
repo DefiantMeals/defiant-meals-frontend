@@ -61,7 +61,7 @@ const Admin = () => {
   // Orders functions
   const fetchOrders = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/orders?date=${selectedDate}`);
+      const response = await fetch(`https://defiant-meals-backend.onrender.com/api/orders?date=${selectedDate}`);
       if (response.ok) {
         const data = await response.json();
         
@@ -94,7 +94,7 @@ const Admin = () => {
 
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
+      const response = await fetch(`https://defiant-meals-backend.onrender.com/api/orders/${orderId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -122,7 +122,7 @@ const Admin = () => {
   const fetchMenuItems = async () => {
     setMenuLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/menu');
+      const response = await fetch('https://defiant-meals-backend.onrender.com/api/menu');
       if (response.ok) {
         const data = await response.json();
         setMenuItems(data);
@@ -146,8 +146,8 @@ const Admin = () => {
     e.preventDefault();
     try {
       const url = editingItem 
-        ? `http://localhost:5000/api/menu/${editingItem._id}`
-        : 'http://localhost:5000/api/menu';
+        ? `https://defiant-meals-backend.onrender.com/api/menu/${editingItem._id}`
+        : 'https://defiant-meals-backend.onrender.com/api/menu';
       
       const method = editingItem ? 'PUT' : 'POST';
       
@@ -175,7 +175,7 @@ const Admin = () => {
   const deleteMenuItem = async (id) => {
     if (window.confirm('Are you sure you want to delete this item?')) {
       try {
-        const response = await fetch(`http://localhost:5000/api/menu/${id}`, {
+        const response = await fetch(`https://defiant-meals-backend.onrender.com/api/menu/${id}`, {
           method: 'DELETE'
         });
         
@@ -190,7 +190,7 @@ const Admin = () => {
 
   const toggleAvailability = async (id, currentStatus) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/menu/${id}`, {
+      const response = await fetch(`https://defiant-meals-backend.onrender.com/api/menu/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

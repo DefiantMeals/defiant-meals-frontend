@@ -17,7 +17,7 @@ const AdminDashboard = () => {
   const fetchOrders = async () => {
     try {
       // Updated to match your backend port
-      const response = await fetch('http://localhost:5000/api/orders');
+      const response = await fetch('https://defiant-meals-backend.onrender.com');
       if (response.ok) {
         const data = await response.json();
         setOrders(data);
