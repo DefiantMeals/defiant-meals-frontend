@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 
-const Order = ({ cartItems, handleUpdateQuantity, handleRemoveFromCart, setCurrentPage }) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [orderSubmitted, setOrderSubmitted] = useState(false);
+const Order = ({ cartItems, handleUpdateQuantity, handleRemoveFromCart, setCurrentPage, setOrderData }) => {
   const [orderError, setOrderError] = useState('');
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
@@ -22,16 +20,14 @@ const Order = ({ cartItems, handleUpdateQuantity, handleRemoveFromCart, setCurre
     }));
   };
 
-  const submitOrder = async () => {
+  const continueToPickup = () => {
     if (!customerInfo.name || !customerInfo.email || !customerInfo.phone) {
       setOrderError('Please fill in all required fields');
       return;
     }
 
-    setIsSubmitting(true);
-    setOrderError('');
-
-    const orderData = {
+    // Save order data for pickup page
+    const orderDetails = {
       customer: customerInfo,
       items: cartItems.map(item => ({
         id: item.id,
@@ -41,65 +37,12 @@ const Order = ({ cartItems, handleUpdateQuantity, handleRemoveFromCart, setCurre
       })),
       subtotal: subtotal,
       tax: tax,
-      total: total,
-      orderDate: new Date().toISOString()
+      total: total
     };
 
-    try {
-      const response = await fetch('http://localhost:5000/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(orderData)
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      console.log('Order submitted successfully:', result);
-      setOrderSubmitted(true);
-      
-      // Clear cart after successful order
-      cartItems.forEach(item => handleRemoveFromCart(item.id));
-      
-    } catch (error) {
-      console.error('Error submitting order:', error);
-      setOrderError('Failed to submit order. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
+    setOrderData(orderDetails);
+    setCurrentPage('pickup');
   };
-
-  if (orderSubmitted) {
-    return (
-      <div className="min-h-screen py-16">
-        <div className="container mx-auto px-4 text-center">
-          <div className="bg-green-50 rounded-lg p-12 max-w-2xl mx-auto">
-            <div className="text-6xl mb-4">✅</div>
-            <h2 className="text-3xl font-bold text-green-800 mb-4">Order Submitted Successfully!</h2>
-            <p className="text-lg text-green-700 mb-6">
-              Thank you for your order! We've received your order and will begin preparing it shortly.
-            </p>
-            <p className="text-gray-600 mb-8">
-              You'll receive a confirmation email at {customerInfo.email} with your order details.
-            </p>
-            <button 
-              onClick={() => {
-                setOrderSubmitted(false);
-                setCustomerInfo({ name: '', email: '', phone: '' });
-              }}
-              className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-300"
-            >
-              Place Another Order
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   if (cartItems.length === 0) {
     return (
@@ -268,15 +211,10 @@ const Order = ({ cartItems, handleUpdateQuantity, handleRemoveFromCart, setCurre
               
               <div className="space-y-3">
                 <button 
-                  onClick={submitOrder}
-                  disabled={isSubmitting}
-                  className={`w-full py-3 rounded-lg font-semibold transition duration-300 ${
-                    isSubmitting 
-                      ? 'bg-gray-400 cursor-not-allowed' 
-                      : 'bg-blue-600 hover:bg-blue-700'
-                  } text-white`}
+                  onClick={continueToPickup}
+                  className="w-full py-3 rounded-lg font-semibold transition duration-300 bg-blue-600 hover:bg-blue-700 text-white"
                 >
-                  {isSubmitting ? 'Submitting Order...' : 'Submit Order'}
+                  Continue to Pickup
                 </button>
                 <button 
                   onClick={() => setCurrentPage('menu')}

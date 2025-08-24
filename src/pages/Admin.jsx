@@ -1,154 +1,208 @@
 import React, { useState, useEffect } from 'react';
 
-const API_BASE_URL = `${import.meta.env.VITE_API_URL}/api/menu`;
-
-const fetchMenuItems = async () => {
-  const response = await fetch(API_BASE_URL);
-  if (!response.ok) throw new Error('Failed to fetch menu items');
-  return await response.json();
-};
-
-const addMenuItem = async (menuItem) => {
-  const response = await fetch(API_BASE_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(menuItem),
-  });
-  if (!response.ok) throw new Error('Failed to add menu item');
-  return await response.json();
-};
-
-const updateMenuItem = async (id, menuItem) => {
-  const response = await fetch(`${API_BASE_URL}/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(menuItem),
-  });
-  if (!response.ok) throw new Error('Failed to update menu item');
-  return await response.json();
-};
-
-const deleteMenuItem = async (id) => {
-  const response = await fetch(`${API_BASE_URL}/${id}`, {
-    method: 'DELETE',
-  });
-  if (!response.ok) throw new Error('Failed to delete menu item');
-  return await response.json();
-};
-
-const toggleMenuItemAvailability = async (id) => {
-  const response = await fetch(`${API_BASE_URL}/${id}/toggle`, {
-    method: 'PATCH',
-  });
-  if (!response.ok) throw new Error('Failed to toggle menu item');
-  return await response.json();
-};
-
-// Helper function to convert Google Drive sharing URL to direct image URL
-const convertGoogleDriveUrl = (url) => {
-  if (!url) return '';
-  
-  // Check if it's a Google Drive sharing URL
-  const match = url.match(/\/file\/d\/([a-zA-Z0-9-_]+)/);
-  if (match) {
-    const fileId = match[1];
-    return `https://drive.google.com/uc?export=view&id=${fileId}`;
-  }
-  
-  // Return original URL if it's not a Google Drive URL
-  return url;
-};
-
 const Admin = () => {
+  const [activeTab, setActiveTab] = useState('orders');
+  
+  // Orders state
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [refreshInterval, setRefreshInterval] = useState(null);
+  const [audioEnabled, setAudioEnabled] = useState(true);
+  const [lastOrderCount, setLastOrderCount] = useState(0);
+
+  // Menu state
   const [menuItems, setMenuItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showAddForm, setShowAddForm] = useState(true);
+  const [menuLoading, setMenuLoading] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     price: '',
-    category: '',
-    imageUrl: '', // Added image URL field
+    category: 'High Protein',
+    calories: '',
+    protein: '',
     available: true,
+    imageUrl: ''
   });
 
-  useEffect(() => {
-    loadMenuItems();
-  }, []);
+  const categories = [
+    'High Protein',
+    'Quality Carbs', 
+    'Healthier Options',
+    'Snacks'
+  ];
 
-  const loadMenuItems = async () => {
-    try {
-      setLoading(true);
-      const items = await fetchMenuItems();
-      setMenuItems(items);
-      setError(null);
-    } catch (err) {
-      setError(`Failed to load menu items: ${err.message}`);
-    } finally {
-      setLoading(false);
+  // Audio notification function
+  const playNewOrderSound = () => {
+    if (audioEnabled) {
+      // Create audio context and play notification sound
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.5);
     }
+  };
+
+  // Orders functions
+  const fetchOrders = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/orders?date=${selectedDate}`);
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Check for new orders and play sound
+        if (!ordersLoading && data.length > lastOrderCount) {
+          const newOrdersCount = data.length - lastOrderCount;
+          if (newOrdersCount > 0) {
+            playNewOrderSound();
+            // Show browser notification if permission granted
+            if (Notification.permission === 'granted') {
+              new Notification(`${newOrdersCount} New Order${newOrdersCount > 1 ? 's' : ''}!`, {
+                body: 'Check the admin dashboard for details.',
+                icon: '/favicon.ico'
+              });
+            }
+          }
+        }
+        
+        setOrders(data);
+        setLastOrderCount(data.length);
+      } else {
+        console.error('Failed to fetch orders');
+      }
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    } finally {
+      setOrdersLoading(false);
+    }
+  };
+
+  const updateOrderStatus = async (orderId, newStatus) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (response.ok) {
+        setOrders(prev => 
+          prev.map(order => 
+            order._id === orderId 
+              ? { ...order, status: newStatus }
+              : order
+          )
+        );
+      } else {
+        console.error('Failed to update order status');
+      }
+    } catch (error) {
+      console.error('Error updating order status:', error);
+    }
+  };
+
+  // Menu functions
+  const fetchMenuItems = async () => {
+    setMenuLoading(true);
+    try {
+      const response = await fetch('http://localhost:5000/api/menu');
+      if (response.ok) {
+        const data = await response.json();
+        setMenuItems(data);
+      }
+    } catch (error) {
+      console.error('Error fetching menu items:', error);
+    } finally {
+      setMenuLoading(false);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const menuItemData = {
-        ...formData,
-        price: parseFloat(formData.price),
-        imageUrl: convertGoogleDriveUrl(formData.imageUrl), // Convert Google Drive URL
-      };
+      const url = editingItem 
+        ? `http://localhost:5000/api/menu/${editingItem._id}`
+        : 'http://localhost:5000/api/menu';
+      
+      const method = editingItem ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...formData,
+          price: parseFloat(formData.price)
+        })
+      });
 
-      if (editingItem) {
-        await updateMenuItem(editingItem._id, menuItemData);
-        loadMenuItems(); // Reload to see changes
-      } else {
-        const newItem = await addMenuItem({
-          ...menuItemData,
-          createdBy: 'admin',
-        });
-        setMenuItems((prev) => [...prev, newItem]);
+      if (response.ok) {
+        fetchMenuItems();
+        resetForm();
+        setShowAddForm(false);
       }
-      resetForm();
-    } catch (err) {
-      console.error(err);
-      setError(editingItem ? 'Failed to update item' : 'Failed to add item');
+    } catch (error) {
+      console.error('Error saving menu item:', error);
     }
   };
 
-  const handleEdit = (item) => {
-    setEditingItem(item);
-    setFormData({
-      name: item.name,
-      description: item.description || '',
-      price: item.price.toString(),
-      category: item.category || '',
-      imageUrl: item.imageUrl || '', // Include image URL in edit
-      available: item.available,
-    });
-    setShowAddForm(true);
-  };
-
-  const handleDelete = async (id) => {
+  const deleteMenuItem = async (id) => {
     if (window.confirm('Are you sure you want to delete this item?')) {
       try {
-        await deleteMenuItem(id);
-        setMenuItems((prev) => prev.filter((item) => item._id !== id));
-      } catch (err) {
-        setError('Failed to delete item');
+        const response = await fetch(`http://localhost:5000/api/menu/${id}`, {
+          method: 'DELETE'
+        });
+        
+        if (response.ok) {
+          fetchMenuItems();
+        }
+      } catch (error) {
+        console.error('Error deleting menu item:', error);
       }
     }
   };
 
-  const handleToggleAvailability = async (id) => {
+  const toggleAvailability = async (id, currentStatus) => {
     try {
-      const updated = await toggleMenuItemAvailability(id);
-      setMenuItems((prev) =>
-        prev.map((item) => (item._id === id ? updated : item))
-      );
-    } catch (err) {
-      setError('Failed to toggle availability');
+      const response = await fetch(`http://localhost:5000/api/menu/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ available: !currentStatus })
+      });
+
+      if (response.ok) {
+        fetchMenuItems();
+      }
+    } catch (error) {
+      console.error('Error updating availability:', error);
     }
   };
 
@@ -157,231 +211,530 @@ const Admin = () => {
       name: '',
       description: '',
       price: '',
-      category: '',
-      imageUrl: '', // Reset image URL
+      category: 'High Protein',
+      calories: '',
+      protein: '',
       available: true,
+      imageUrl: ''
     });
     setEditingItem(null);
-    setShowAddForm(false);
   };
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
+  const startEdit = (item) => {
+    setFormData({
+      name: item.name,
+      description: item.description,
+      price: item.price.toString(),
+      category: item.category,
+      calories: item.calories || '',
+      protein: item.protein || '',
+      available: item.available,
+      imageUrl: item.imageUrl || ''
+    });
+    setEditingItem(item);
+    setShowAddForm(true);
   };
 
-  if (loading) return <div className="text-center py-8">Loading...</div>;
+  // Auto-refresh functions
+  const startAutoRefresh = () => {
+    if (refreshInterval) clearInterval(refreshInterval);
+    const interval = setInterval(fetchOrders, 30000);
+    setRefreshInterval(interval);
+  };
+
+  const stopAutoRefresh = () => {
+    if (refreshInterval) {
+      clearInterval(refreshInterval);
+      setRefreshInterval(null);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'orders') {
+      // Request notification permission on first load
+      if (Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+      
+      fetchOrders();
+      startAutoRefresh();
+      return () => stopAutoRefresh();
+    } else if (activeTab === 'menu') {
+      fetchMenuItems();
+    }
+  }, [activeTab, selectedDate]);
+
+  // Helper functions for orders
+  const filteredOrders = orders.filter(order => {
+    if (statusFilter === 'all') return true;
+    return order.status === statusFilter;
+  });
+
+  const orderStats = {
+    total: orders.length,
+    pending: orders.filter(o => o.status === 'confirmed').length,
+    preparing: orders.filter(o => o.status === 'preparing').length,
+    ready: orders.filter(o => o.status === 'ready').length,
+    completed: orders.filter(o => o.status === 'completed').length
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'confirmed': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'preparing': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'ready': return 'bg-green-100 text-green-800 border-green-200';
+      case 'completed': return 'bg-gray-100 text-gray-800 border-gray-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getNextStatus = (currentStatus) => {
+    switch (currentStatus) {
+      case 'confirmed': return 'preparing';
+      case 'preparing': return 'ready';
+      case 'ready': return 'completed';
+      default: return currentStatus;
+    }
+  };
+
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 'confirmed': return 'New Order';
+      case 'preparing': return 'Preparing';
+      case 'ready': return 'Ready for Pickup';
+      case 'completed': return 'Completed';
+      default: return status;
+    }
+  };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">
-          Menu Administration
-        </h1>
-
-        {error && <div className="text-red-600 mb-4">{error}</div>}
-
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">
-              {editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}
-            </h2>
-            <button
-              onClick={() => {
-                resetForm();
-                setShowAddForm(!showAddForm);
-              }}
-              className="bg-blue-600 text-white px-4 py-2 rounded"
-            >
-              {showAddForm ? 'Cancel' : 'Add New Item'}
-            </button>
-          </div>
-
-          {showAddForm && (
-            <form
-              onSubmit={handleSubmit}
-              className="grid grid-cols-1 md:grid-cols-2 gap-4"
-            >
-              <input
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                placeholder="Item Name"
-                required
-                className="p-2 border rounded"
-              />
-              <input
-                name="price"
-                value={formData.price}
-                onChange={handleInputChange}
-                type="number"
-                step="0.01"
-                placeholder="Price"
-                required
-                className="p-2 border rounded"
-              />
-              <select
-                name="category"
-                value={formData.category}
-                onChange={handleInputChange}
-                required
-                className="p-2 border rounded"
-              >
-                <option value="">Select a category...</option>
-                <option value="High Protein">High Protein</option>
-                <option value="Quality Carbs">Quality Carbs</option>
-                <option value="Healthier Options">Healthier Options</option>
-                <option value="Snacks">Snacks</option>
-              </select>
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  name="available"
-                  checked={formData.available}
-                  onChange={handleInputChange}
-                />
-                <span>Available</span>
-              </label>
-              
-              {/* New Image URL field */}
-              <input
-                name="imageUrl"
-                value={formData.imageUrl}
-                onChange={handleInputChange}
-                placeholder="Image URL (paste Google Drive sharing link)"
-                className="md:col-span-2 p-2 border rounded"
-              />
-              
-              {/* Image preview */}
-              {formData.imageUrl && (
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Image Preview:
-                  </label>
-                  <img
-                    src={convertGoogleDriveUrl(formData.imageUrl)}
-                    alt="Preview"
-                    className="w-32 h-32 object-cover rounded border"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                    }}
-                  />
-                </div>
-              )}
-              
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                rows="3"
-                placeholder="Description"
-                className="md:col-span-2 p-2 border rounded"
-              />
-              <div className="md:col-span-2 flex gap-4">
-                <button
-                  type="submit"
-                  className="bg-green-600 text-white px-4 py-2 rounded"
-                >
-                  {editingItem ? 'Update' : 'Add'} Item
-                </button>
-                {editingItem && (
-                  <button
-                    onClick={resetForm}
-                    type="button"
-                    className="bg-gray-500 text-white px-4 py-2 rounded"
-                  >
-                    Cancel
-                  </button>
-                )}
-              </div>
-            </form>
-          )}
+    <div className="min-h-screen py-8 bg-gray-50">
+      <div className="container mx-auto px-4">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold mb-2">Restaurant Dashboard</h1>
+          <p className="text-gray-600">Manage orders and menu items</p>
         </div>
 
-        <table className="min-w-full bg-white">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="py-2 px-4">Image</th>
-              <th className="py-2 px-4">Name</th>
-              <th className="py-2 px-4">Category</th>
-              <th className="py-2 px-4">Price</th>
-              <th className="py-2 px-4">Status</th>
-              <th className="py-2 px-4">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {menuItems.map((item) => (
-              <tr key={item._id} className="border-t">
-                <td className="py-2 px-4">
-                  {item.imageUrl ? (
-                    <img
-                      src={convertGoogleDriveUrl(item.imageUrl)}
-                      alt={item.name}
-                      className="w-16 h-16 object-cover rounded"
-                      onError={(e) => {
-                        e.target.src = 'https://via.placeholder.com/64x64?text=No+Image';
-                      }}
-                    />
-                  ) : (
-                    <div className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500">
-                      No Image
-                    </div>
-                  )}
-                </td>
-                <td className="py-2 px-4">
-                  <strong>{item.name}</strong>
-                  <div className="text-sm text-gray-500">{item.description}</div>
-                </td>
-                <td className="py-2 px-4">{item.category}</td>
-                <td className="py-2 px-4">
-                  ${parseFloat(item.price).toFixed(2)}
-                </td>
-                <td className="py-2 px-4">
-                  <span
-                    className={`px-2 py-1 text-xs rounded-full ${
-                      item.available
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}
-                  >
-                    {item.available ? 'Available' : 'Unavailable'}
-                  </span>
-                </td>
-                <td className="py-2 px-4 space-x-2">
-                  <button
-                    onClick={() => handleEdit(item)}
-                    className="text-blue-600 hover:text-blue-800"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleToggleAvailability(item._id)}
-                    className={`${
-                      item.available 
-                        ? 'text-yellow-600 hover:text-yellow-800' 
-                        : 'text-green-600 hover:text-green-800'
-                    }`}
-                  >
-                    {item.available ? 'Disable' : 'Enable'}
-                  </button>
-                  <button
-                    onClick={() => handleDelete(item._id)}
-                    className="text-red-600 hover:text-red-800"
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {/* Tabs */}
+        <div className="mb-8">
+          <div className="flex space-x-1 bg-gray-200 p-1 rounded-lg w-fit">
+            <button
+              onClick={() => setActiveTab('orders')}
+              className={`px-6 py-2 rounded-md font-semibold transition duration-300 ${
+                activeTab === 'orders'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              Order Management
+            </button>
+            <button
+              onClick={() => setActiveTab('menu')}
+              className={`px-6 py-2 rounded-md font-semibold transition duration-300 ${
+                activeTab === 'menu'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              Menu Management
+            </button>
+          </div>
+        </div>
 
-        {menuItems.length === 0 && (
-          <div className="text-center py-6 text-gray-500">
-            No menu items yet.
+        {/* Orders Tab */}
+        {activeTab === 'orders' && (
+          <div>
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+              <div className="bg-white rounded-lg shadow p-4 text-center">
+                <div className="text-2xl font-bold text-gray-800">{orderStats.total}</div>
+                <div className="text-sm text-gray-600">Total Orders</div>
+              </div>
+              <div className="bg-white rounded-lg shadow p-4 text-center">
+                <div className="text-2xl font-bold text-yellow-600">{orderStats.pending}</div>
+                <div className="text-sm text-gray-600">New Orders</div>
+              </div>
+              <div className="bg-white rounded-lg shadow p-4 text-center">
+                <div className="text-2xl font-bold text-blue-600">{orderStats.preparing}</div>
+                <div className="text-sm text-gray-600">Preparing</div>
+              </div>
+              <div className="bg-white rounded-lg shadow p-4 text-center">
+                <div className="text-2xl font-bold text-green-600">{orderStats.ready}</div>
+                <div className="text-sm text-gray-600">Ready</div>
+              </div>
+              <div className="bg-white rounded-lg shadow p-4 text-center">
+                <div className="text-2xl font-bold text-gray-600">{orderStats.completed}</div>
+                <div className="text-sm text-gray-600">Completed</div>
+              </div>
+            </div>
+
+            {/* Filters */}
+            <div className="bg-white rounded-lg shadow p-6 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Status Filter</label>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">All Orders</option>
+                    <option value="confirmed">New Orders</option>
+                    <option value="preparing">Preparing</option>
+                    <option value="ready">Ready for Pickup</option>
+                    <option value="completed">Completed</option>
+                  </select>
+                </div>
+                <div className="flex items-end">
+                  <button
+                    onClick={fetchOrders}
+                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-300"
+                  >
+                    Refresh Orders
+                  </button>
+                </div>
+                <div className="flex items-end">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600">Auto-refresh:</span>
+                    <div className={`w-3 h-3 rounded-full ${refreshInterval ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    <span className="text-sm text-gray-600">{refreshInterval ? 'On' : 'Off'}</span>
+                  </div>
+                </div>
+                <div className="flex items-end">
+                  <button
+                    onClick={() => setAudioEnabled(!audioEnabled)}
+                    className={`w-full py-2 px-4 rounded-md transition duration-300 ${
+                      audioEnabled 
+                        ? 'bg-green-600 text-white hover:bg-green-700' 
+                        : 'bg-gray-400 text-white hover:bg-gray-500'
+                    }`}
+                  >
+                    Sound: {audioEnabled ? 'On' : 'Off'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Orders List */}
+            <div className="space-y-4">
+              {filteredOrders.length === 0 ? (
+                <div className="bg-white rounded-lg shadow p-8 text-center">
+                  <p className="text-gray-500 text-lg">No orders found for the selected date and filter.</p>
+                </div>
+              ) : (
+                filteredOrders.map(order => (
+                  <div key={order._id} className="bg-white rounded-lg shadow p-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                      {/* Order Info */}
+                      <div className="lg:col-span-2">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-semibold">Order #{order._id?.slice(-8)}</h3>
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(order.status)}`}>
+                            {getStatusLabel(order.status)}
+                          </span>
+                        </div>
+                        
+                        <div className="space-y-2 text-sm">
+                          <div><strong>Customer:</strong> {order.customer?.name}</div>
+                          <div><strong>Phone:</strong> {order.customer?.phone}</div>
+                          <div><strong>Email:</strong> {order.customer?.email}</div>
+                          <div><strong>Pickup Date:</strong> {order.pickupDate}</div>
+                          <div><strong>Pickup Time:</strong> {order.pickupTime}</div>
+                          <div><strong>Payment:</strong> {order.paymentMethod || 'Card'}</div>
+                          <div><strong>Total:</strong> ${order.total?.toFixed(2)}</div>
+                        </div>
+                      </div>
+
+                      {/* Order Items */}
+                      <div>
+                        <h4 className="font-semibold mb-2">Items:</h4>
+                        <div className="space-y-1 text-sm">
+                          {order.items?.map((item, index) => (
+                            <div key={index} className="flex justify-between">
+                              <span>{item.quantity}x {item.name}</span>
+                              <span>${(item.price * item.quantity).toFixed(2)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex flex-col space-y-2">
+                        {order.status !== 'completed' && (
+                          <button
+                            onClick={() => updateOrderStatus(order._id, getNextStatus(order.status))}
+                            className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition duration-300"
+                          >
+                            {order.status === 'confirmed' && 'Start Preparing'}
+                            {order.status === 'preparing' && 'Mark as Ready'}
+                            {order.status === 'ready' && 'Mark as Complete'}
+                          </button>
+                        )}
+                        
+                        <button
+                          onClick={() => {
+                            const printContent = `
+                              ORDER #${order._id?.slice(-8)}
+                              Customer: ${order.customer?.name}
+                              Phone: ${order.customer?.phone}
+                              Pickup: ${order.pickupDate} at ${order.pickupTime}
+                              
+                              ITEMS:
+                              ${order.items?.map(item => `${item.quantity}x ${item.name} - $${(item.price * item.quantity).toFixed(2)}`).join('\n')}
+                              
+                              TOTAL: $${order.total?.toFixed(2)}
+                            `;
+                            const printWindow = window.open('', '_blank');
+                            printWindow.document.write(`<pre>${printContent}</pre>`);
+                            printWindow.print();
+                            printWindow.close();
+                          }}
+                          className="w-full bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition duration-300"
+                        >
+                          Print Order
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Menu Tab */}
+        {activeTab === 'menu' && (
+          <div>
+            {/* Menu Header */}
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-semibold">Menu Items</h2>
+              <button
+                onClick={() => {
+                  resetForm();
+                  setShowAddForm(true);
+                }}
+                className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition duration-300"
+              >
+                Add New Item
+              </button>
+            </div>
+
+            {/* Add/Edit Form */}
+            {showAddForm && (
+              <div className="bg-white rounded-lg shadow p-6 mb-6">
+                <h3 className="text-lg font-semibold mb-4">
+                  {editingItem ? 'Edit Menu Item' : 'Add New Menu Item'}
+                </h3>
+                <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Price</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      name="price"
+                      value={formData.price}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea
+                      name="description"
+                      value={formData.description}
+                      onChange={handleInputChange}
+                      rows="3"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                    <select
+                      name="category"
+                      value={formData.category}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {categories.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Image URL</label>
+                    <input
+                      type="url"
+                      name="imageUrl"
+                      value={formData.imageUrl}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Calories</label>
+                    <input
+                      type="text"
+                      name="calories"
+                      value={formData.calories}
+                      onChange={handleInputChange}
+                      placeholder="e.g., 320"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Protein</label>
+                    <input
+                      type="text"
+                      name="protein"
+                      value={formData.protein}
+                      onChange={handleInputChange}
+                      placeholder="e.g., 15g"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div className="md:col-span-2">
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        name="available"
+                        checked={formData.available}
+                        onChange={handleInputChange}
+                        className="rounded"
+                      />
+                      <span className="text-sm font-medium text-gray-700">Available for ordering</span>
+                    </label>
+                  </div>
+                  
+                  <div className="md:col-span-2 flex space-x-4">
+                    <button
+                      type="submit"
+                      className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition duration-300"
+                    >
+                      {editingItem ? 'Update Item' : 'Add Item'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAddForm(false);
+                        resetForm();
+                      }}
+                      className="bg-gray-400 text-white px-6 py-2 rounded-md hover:bg-gray-500 transition duration-300"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* Menu Items List */}
+            {menuLoading ? (
+              <div className="text-center py-8">Loading menu items...</div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {menuItems.map(item => (
+                  <div key={item._id} className="bg-white rounded-lg shadow p-6">
+                    {/* Image */}
+                    {item.imageUrl && (
+                      <div className="mb-4">
+                        <img
+                          src={item.imageUrl}
+                          alt={item.name}
+                          className="w-full h-48 object-cover rounded-lg"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Placeholder for items without images */}
+                    {!item.imageUrl && (
+                      <div className="w-full h-48 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg mb-4 flex items-center justify-center">
+                        <span className="text-blue-600 text-sm font-medium">No Image</span>
+                      </div>
+                    )}
+                    
+                    <div className="flex justify-between items-start mb-4">
+                      <h3 className="text-lg font-semibold">{item.name}</h3>
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        item.available 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {item.available ? 'Available' : 'Unavailable'}
+                      </span>
+                    </div>
+                    
+                    <p className="text-gray-600 text-sm mb-2">{item.description}</p>
+                    <p className="text-xl font-bold text-blue-600 mb-2">${item.price.toFixed(2)}</p>
+                    <p className="text-sm text-gray-500 mb-4">{item.category}</p>
+                    
+                    {(item.calories || item.protein) && (
+                      <div className="text-xs text-gray-500 mb-4">
+                        {item.calories && <span>{item.calories} cal</span>}
+                        {item.calories && item.protein && <span> • </span>}
+                        {item.protein && <span>{item.protein} protein</span>}
+                      </div>
+                    )}
+                    
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => startEdit(item)}
+                        className="flex-1 bg-blue-600 text-white py-1 px-3 text-sm rounded hover:bg-blue-700 transition duration-300"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => toggleAvailability(item._id, item.available)}
+                        className={`flex-1 py-1 px-3 text-sm rounded transition duration-300 ${
+                          item.available
+                            ? 'bg-yellow-600 text-white hover:bg-yellow-700'
+                            : 'bg-green-600 text-white hover:bg-green-700'
+                        }`}
+                      >
+                        {item.available ? 'Disable' : 'Enable'}
+                      </button>
+                      <button
+                        onClick={() => deleteMenuItem(item._id)}
+                        className="flex-1 bg-red-600 text-white py-1 px-3 text-sm rounded hover:bg-red-700 transition duration-300"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -5,12 +5,19 @@ import Home from './pages/Home';
 import Menu from './pages/Menu';
 import Order from './pages/Order';
 import Pickup from './pages/Pickup';
+import Payment from './pages/Payment';
 import Contact from './pages/Contact';
 import Admin from './pages/Admin';
 
 const App = () => {
   const [currentPage, setCurrentPage] = useState('home');
   const [cartItems, setCartItems] = useState([]);
+  const [orderData, setOrderData] = useState(null);
+  const [customerInfo, setCustomerInfo] = useState({
+    name: '',
+    email: '',
+    phone: ''
+  });
 
   const handleAddToCart = (item) => {
     setCartItems(prev => {
@@ -43,6 +50,12 @@ const App = () => {
     setCartItems(prev => prev.filter(item => item.id !== id));
   };
 
+  const clearOrderData = () => {
+    setOrderData(null);
+    setCustomerInfo({ name: '', email: '', phone: '' });
+    setCartItems([]);
+  };
+
   const renderPage = () => {
     switch(currentPage) {
       case 'home':
@@ -55,9 +68,23 @@ const App = () => {
           handleUpdateQuantity={handleUpdateQuantity}
           handleRemoveFromCart={handleRemoveFromCart}
           setCurrentPage={setCurrentPage}
+          setOrderData={setOrderData}
+          customerInfo={customerInfo}
+          setCustomerInfo={setCustomerInfo}
         />;
       case 'pickup':
-        return <Pickup />;
+        return <Pickup 
+          orderData={orderData}
+          setCurrentPage={setCurrentPage}
+          setOrderData={setOrderData}
+        />;
+      case 'payment':
+        return <Payment 
+          orderData={orderData}
+          setCurrentPage={setCurrentPage}
+          handleRemoveFromCart={handleRemoveFromCart}
+          clearOrderData={clearOrderData}
+        />;
       case 'contact':
         return <Contact />;
       case 'admin':
