@@ -11,7 +11,7 @@ const Navbar = ({ setCurrentPage, currentPage }) => {
     { id: 'home', name: 'Home' },
     { id: 'menu', name: 'Menu' },
     { id: 'order', name: 'Order' },
-    { id: 'pickup', name: 'Pickup' },
+    
     { id: 'contact', name: 'Contact' }
   ];
 
