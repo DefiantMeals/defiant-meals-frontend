@@ -54,7 +54,7 @@ const Payment = ({ orderData, setCurrentPage, handleRemoveFromCart }) => {
         status: 'confirmed'
       };
 
-      const response = await fetch('https://defiant-meals-backend-er.onrender.com/api/orders', {
+      const response = await fetch('https://defiant-meals-backend.onrender.com/api/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
