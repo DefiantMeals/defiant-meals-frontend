@@ -445,13 +445,13 @@ const Admin = () => {
                         </div>
                         
                         <div className="space-y-2 text-sm">
-                          <div><strong>Customer:</strong> {order.customer?.name}</div>
-                          <div><strong>Phone:</strong> {order.customer?.phone}</div>
-                          <div><strong>Email:</strong> {order.customer?.email}</div>
+                          <div><strong>Customer:</strong> {order.customerName}</div>
+                          <div><strong>Phone:</strong> {order.customerPhone}</div>
+                          <div><strong>Email:</strong> {order.customerEmail}</div>
                           <div><strong>Pickup Date:</strong> {order.pickupDate}</div>
                           <div><strong>Pickup Time:</strong> {order.pickupTime}</div>
                           <div><strong>Payment:</strong> {order.paymentMethod || 'Card'}</div>
-                          <div><strong>Total:</strong> ${order.total?.toFixed(2)}</div>
+                          <div><strong>Total:</strong> ${order.totalAmount?.toFixed(2)}</div>
                         </div>
                       </div>
 
@@ -461,8 +461,8 @@ const Admin = () => {
                         <div className="space-y-1 text-sm">
                           {order.items?.map((item, index) => (
                             <div key={index} className="flex justify-between">
-                              <span>{item.quantity}x {item.name}</span>
-                              <span>${(item.price * item.quantity).toFixed(2)}</span>
+                              <span>{item.quantity}x {item.menuItemId.name}</span>
+                              <span>${(item.menuItemId.price * item.quantity).toFixed(2)}</span>
                             </div>
                           ))}
                         </div>
@@ -485,14 +485,14 @@ const Admin = () => {
                           onClick={() => {
                             const printContent = `
                               ORDER #${order._id?.slice(-8)}
-                              Customer: ${order.customer?.name}
-                              Phone: ${order.customer?.phone}
+                              Customer: ${order.customerName}
+                              Phone: ${order.customerPhone}
                               Pickup: ${order.pickupDate} at ${order.pickupTime}
                               
                               ITEMS:
-                              ${order.items?.map(item => `${item.quantity}x ${item.name} - $${(item.price * item.quantity).toFixed(2)}`).join('\n')}
+                              ${order.items?.map(item => `${item.quantity}x ${item.menuItemId.name} - $${(item.menuItemId.price * item.quantity).toFixed(2)}`).join('\n')}
                               
-                              TOTAL: $${order.total?.toFixed(2)}
+                              TOTAL: $${order.totalAmount?.toFixed(2)}
                             `;
                             const printWindow = window.open('', '_blank');
                             printWindow.document.write(`<pre>${printContent}</pre>`);
