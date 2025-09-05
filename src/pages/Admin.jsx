@@ -1147,11 +1147,15 @@ const Admin = () => {
                 <p className="text-gray-600 mb-6">Each day has two pickup windows: Morning and Evening</p>
                 
                 <div className="space-y-6">
-                  {Object.entries(schedule).map(([day, daySchedule]) => (
+                  {Object.entries(schedule)
+                    .filter(([day]) => ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].includes(day))
+                    .map(([day, daySchedule]) => (
                     <div key={day} className="border rounded-lg p-6">
                       {/* Day header */}
                       <div className="flex items-center justify-between mb-6">
-                        <h4 className="font-medium text-gray-700 capitalize text-lg">{day}</h4>
+                        <h4 className="font-medium text-gray-700 capitalize text-lg">
+                          {day.charAt(0).toUpperCase() + day.slice(1)}
+                        </h4>
                         <label className="flex items-center space-x-2">
                           <input
                             type="checkbox"
