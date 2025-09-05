@@ -40,15 +40,15 @@ const Admin = () => {
     sortOrder: 0
   });
 
-  // Schedule state
+  // Schedule state - Simple two-slot system
   const [schedule, setSchedule] = useState({
-    monday: { open: false, startTime: '08:00', endTime: '18:00' },
-    tuesday: { open: false, startTime: '08:00', endTime: '18:00' },
-    wednesday: { open: false, startTime: '08:00', endTime: '18:00' },
-    thursday: { open: false, startTime: '08:00', endTime: '18:00' },
-    friday: { open: false, startTime: '08:00', endTime: '18:00' },
-    saturday: { open: false, startTime: '08:00', endTime: '18:00' },
-    sunday: { open: false, startTime: '08:00', endTime: '18:00' }
+    monday: { open: false, morningStart: '08:00', morningEnd: '12:00', eveningStart: '16:00', eveningEnd: '20:00' },
+    tuesday: { open: false, morningStart: '08:00', morningEnd: '12:00', eveningStart: '16:00', eveningEnd: '20:00' },
+    wednesday: { open: false, morningStart: '08:00', morningEnd: '12:00', eveningStart: '16:00', eveningEnd: '20:00' },
+    thursday: { open: false, morningStart: '08:00', morningEnd: '12:00', eveningStart: '16:00', eveningEnd: '20:00' },
+    friday: { open: false, morningStart: '08:00', morningEnd: '12:00', eveningStart: '16:00', eveningEnd: '20:00' },
+    saturday: { open: false, morningStart: '08:00', morningEnd: '12:00', eveningStart: '16:00', eveningEnd: '20:00' },
+    sunday: { open: false, morningStart: '08:00', morningEnd: '12:00', eveningStart: '16:00', eveningEnd: '20:00' }
   });
   const [scheduleLoading, setScheduleLoading] = useState(false);
 
@@ -62,7 +62,6 @@ const Admin = () => {
   // Audio notification function
   const playNewOrderSound = () => {
     if (audioEnabled) {
-      // Create audio context and play notification sound
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
@@ -89,12 +88,10 @@ const Admin = () => {
       if (response.ok) {
         const data = await response.json();
         
-        // Check for new orders and play sound
         if (!ordersLoading && data.length > lastOrderCount) {
           const newOrdersCount = data.length - lastOrderCount;
           if (newOrdersCount > 0) {
             playNewOrderSound();
-            // Show browser notification if permission granted
             if (Notification.permission === 'granted') {
               new Notification(`${newOrdersCount} New Order${newOrdersCount > 1 ? 's' : ''}!`, {
                 body: 'Check the admin dashboard for details.',
@@ -174,7 +171,7 @@ const Admin = () => {
     }
   };
 
-  // Schedule functions
+  // Schedule functions - Simple two-slot system
   const fetchSchedule = async () => {
     setScheduleLoading(true);
     try {
@@ -184,25 +181,27 @@ const Admin = () => {
         if (data) {
           setSchedule(data);
         }
+      } else {
+        console.log('Schedule endpoint not available, using default schedule');
       }
     } catch (error) {
-      console.error('Error fetching schedule:', error);
+      console.log('Schedule endpoint not available, using default schedule');
     } finally {
       setScheduleLoading(false);
     }
   };
 
   const updateSchedule = async (day, field, value) => {
-    const updatedSchedule = {
-      ...schedule,
-      [day]: {
-        ...schedule[day],
-        [field]: value
-      }
-    };
-    setSchedule(updatedSchedule);
-
     try {
+      const updatedSchedule = {
+        ...schedule,
+        [day]: {
+          ...schedule[day],
+          [field]: value
+        }
+      };
+      setSchedule(updatedSchedule);
+
       const response = await fetch('https://defiant-meals-backend.onrender.com/api/schedule', {
         method: 'PUT',
         headers: {
@@ -212,14 +211,10 @@ const Admin = () => {
       });
 
       if (!response.ok) {
-        console.error('Failed to update schedule');
-        // Revert on error
-        fetchSchedule();
+        console.log('Schedule save failed - backend may not be ready');
       }
     } catch (error) {
       console.error('Error updating schedule:', error);
-      // Revert on error
-      fetchSchedule();
     }
   };
 
@@ -445,7 +440,6 @@ const Admin = () => {
 
   useEffect(() => {
     if (activeTab === 'orders') {
-      // Request notification permission on first load
       if (Notification.permission === 'default') {
         Notification.requestPermission();
       }
@@ -455,7 +449,7 @@ const Admin = () => {
       return () => stopAutoRefresh();
     } else if (activeTab === 'menu') {
       fetchMenuItems();
-      fetchCategories(); // Load categories for the dropdown
+      fetchCategories();
     } else if (activeTab === 'categories') {
       fetchCategories();
     } else if (activeTab === 'schedule') {
@@ -515,16 +509,14 @@ const Admin = () => {
   // Helper function for schedule display
   const formatScheduleDisplay = () => {
     const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-    const openDays = days.filter(day => schedule[day].open);
+    const openDays = days.filter(day => schedule[day]?.open);
     
     if (openDays.length === 0) return 'Closed all week';
     
     return openDays.map(day => {
       const dayName = day.charAt(0).toUpperCase() + day.slice(1);
-      const start = schedule[day].startTime;
-      const end = schedule[day].endTime;
-      return `${dayName}: ${start} - ${end}`;
-    }).join(', ');
+      return `${dayName}: ${schedule[day].morningStart}-${schedule[day].morningEnd}, ${schedule[day].eveningStart}-${schedule[day].eveningEnd}`;
+    }).join(' | ');
   };
 
   return (
@@ -1135,13 +1127,13 @@ const Admin = () => {
           </div>
         )}
 
-        {/* Schedule Tab */}
+        {/* Schedule Tab - Simple Two-Slot System */}
         {activeTab === 'schedule' && (
           <div>
             {/* Schedule Header */}
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-semibold">Pickup Schedule</h2>
-              <div className="bg-white rounded-lg shadow px-4 py-2 max-w-2xl">
+              <div className="bg-white rounded-lg shadow px-4 py-2 max-w-3xl">
                 <p className="text-sm text-gray-600">Current schedule: {formatScheduleDisplay()}</p>
               </div>
             </div>
@@ -1151,130 +1143,157 @@ const Admin = () => {
               <div className="text-center py-8">Loading schedule...</div>
             ) : (
               <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold mb-6">Set Pickup Time Slots for Each Day</h3>
+                <h3 className="text-lg font-semibold mb-6">Set Pickup Hours for Each Day</h3>
+                <p className="text-gray-600 mb-6">Each day has two pickup windows: Morning and Evening</p>
                 
                 <div className="space-y-6">
                   {Object.entries(schedule).map(([day, daySchedule]) => (
                     <div key={day} className="border rounded-lg p-6">
                       {/* Day header */}
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center space-x-4">
-                          <h4 className="font-medium text-gray-700 capitalize text-lg">{day}</h4>
-                          <label className="flex items-center space-x-2">
-                            <input
-                              type="checkbox"
-                              checked={daySchedule.open}
-                              onChange={(e) => updateSchedule(day, 'open', e.target.checked)}
-                              className="rounded"
-                            />
-                            <span className="text-sm font-medium text-gray-700">
-                              {daySchedule.open ? 'Open' : 'Closed'}
-                            </span>
-                          </label>
-                        </div>
-                        
-                        {daySchedule.open && (
-                          <button
-                            onClick={() => addTimeSlot(day)}
-                            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition duration-300 text-sm"
-                          >
-                            Add Time Slot
-                          </button>
-                        )}
+                      <div className="flex items-center justify-between mb-6">
+                        <h4 className="font-medium text-gray-700 capitalize text-lg">{day}</h4>
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            checked={daySchedule.open}
+                            onChange={(e) => updateSchedule(day, 'open', e.target.checked)}
+                            className="rounded"
+                          />
+                          <span className="text-sm font-medium text-gray-700">
+                            {daySchedule.open ? 'Open' : 'Closed'}
+                          </span>
+                        </label>
                       </div>
                       
                       {/* Time slots */}
                       {daySchedule.open && (
-                        <div className="space-y-3">
-                          {daySchedule.timeSlots.length === 0 ? (
-                            <p className="text-gray-500 text-sm italic">No time slots added yet. Click "Add Time Slot" to create pickup windows.</p>
-                          ) : (
-                            daySchedule.timeSlots.map((slot, index) => (
-                              <div key={slot.id} className="flex items-center space-x-4 bg-gray-50 p-4 rounded-lg">
-                                <div className="font-medium text-gray-700 min-w-0">
-                                  Slot {index + 1}:
-                                </div>
-                                
-                                <div className="flex items-center space-x-2">
-                                  <label className="text-sm font-medium text-gray-700">Start:</label>
-                                  <input
-                                    type="time"
-                                    value={slot.startTime}
-                                    onChange={(e) => updateTimeSlot(day, slot.id, 'startTime', e.target.value)}
-                                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                  />
-                                </div>
-                                
-                                <div className="flex items-center space-x-2">
-                                  <label className="text-sm font-medium text-gray-700">End:</label>
-                                  <input
-                                    type="time"
-                                    value={slot.endTime}
-                                    onChange={(e) => updateTimeSlot(day, slot.id, 'endTime', e.target.value)}
-                                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                  />
-                                </div>
-                                
-                                <button
-                                  onClick={() => removeTimeSlot(day, slot.id)}
-                                  className="bg-red-600 text-white px-3 py-2 rounded-md hover:bg-red-700 transition duration-300 text-sm"
-                                >
-                                  Remove
-                                </button>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {/* Morning Pickup */}
+                          <div className="bg-blue-50 p-4 rounded-lg">
+                            <h5 className="font-medium text-blue-900 mb-3">Morning Pickup</h5>
+                            <div className="space-y-3">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                                <input
+                                  type="time"
+                                  value={daySchedule.morningStart}
+                                  onChange={(e) => updateSchedule(day, 'morningStart', e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
                               </div>
-                            ))
-                          )}
-                          
-                          {/* Preview available pickup times */}
-                          {daySchedule.timeSlots.length > 0 && (
-                            <div className="mt-4 pt-4 border-t">
-                              <p className="text-sm text-gray-600 mb-2">Available pickup slots (30-min intervals):</p>
-                              <div className="flex flex-wrap gap-2">
-                                {(() => {
-                                  const allSlots = [];
-                                  daySchedule.timeSlots.forEach(slot => {
-                                    const start = new Date(`2000-01-01T${slot.startTime}`);
-                                    const end = new Date(`2000-01-01T${slot.endTime}`);
-                                    const current = new Date(start);
-                                    
-                                    while (current < end) {
-                                      allSlots.push(current.toLocaleTimeString('en-US', { 
-                                        hour: '2-digit', 
-                                        minute: '2-digit',
-                                        hour12: true 
-                                      }));
-                                      current.setMinutes(current.getMinutes() + 30);
-                                    }
-                                  });
-                                  
-                                  // Remove duplicates and sort
-                                  const uniqueSlots = [...new Set(allSlots)].sort((a, b) => {
-                                    const timeA = new Date(`2000-01-01 ${a}`);
-                                    const timeB = new Date(`2000-01-01 ${b}`);
-                                    return timeA - timeB;
-                                  });
-                                  
-                                  return uniqueSlots.slice(0, 12).map(slot => (
-                                    <span key={slot} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
-                                      {slot}
-                                    </span>
-                                  ));
-                                })()}
-                                {(() => {
-                                  const totalSlots = daySchedule.timeSlots.reduce((total, slot) => {
-                                    const start = new Date(`2000-01-01T${slot.startTime}`);
-                                    const end = new Date(`2000-01-01T${slot.endTime}`);
-                                    return total + Math.floor((end - start) / (30 * 60 * 1000));
-                                  }, 0);
-                                  return totalSlots > 12 ? (
-                                    <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
-                                      +{totalSlots - 12} more
-                                    </span>
-                                  ) : null;
-                                })()}
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                                <input
+                                  type="time"
+                                  value={daySchedule.morningEnd}
+                                  onChange={(e) => updateSchedule(day, 'morningEnd', e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
                               </div>
                             </div>
-                          )}
+                          </div>
+                          
+                          {/* Evening Pickup */}
+                          <div className="bg-orange-50 p-4 rounded-lg">
+                            <h5 className="font-medium text-orange-900 mb-3">Evening Pickup</h5>
+                            <div className="space-y-3">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                                <input
+                                  type="time"
+                                  value={daySchedule.eveningStart}
+                                  onChange={(e) => updateSchedule(day, 'eveningStart', e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                                <input
+                                  type="time"
+                                  value={daySchedule.eveningEnd}
+                                  onChange={(e) => updateSchedule(day, 'eveningEnd', e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Preview available pickup times */}
+                      {daySchedule.open && (
+                        <div className="mt-6 pt-4 border-t">
+                          <p className="text-sm text-gray-600 mb-3">Available pickup slots (30-min intervals):</p>
+                          <div className="flex flex-wrap gap-2">
+                            {(() => {
+                              const slots = [];
+                              
+                              // Morning slots
+                              const morningStart = new Date(`2000-01-01T${daySchedule.morningStart}`);
+                              const morningEnd = new Date(`2000-01-01T${daySchedule.morningEnd}`);
+                              const morningCurrent = new Date(morningStart);
+                              
+                              while (morningCurrent < morningEnd) {
+                                slots.push({
+                                  time: morningCurrent.toLocaleTimeString('en-US', { 
+                                    hour: '2-digit', 
+                                    minute: '2-digit',
+                                    hour12: true 
+                                  }),
+                                  type: 'morning'
+                                });
+                                morningCurrent.setMinutes(morningCurrent.getMinutes() + 30);
+                              }
+                              
+                              // Evening slots
+                              const eveningStart = new Date(`2000-01-01T${daySchedule.eveningStart}`);
+                              const eveningEnd = new Date(`2000-01-01T${daySchedule.eveningEnd}`);
+                              const eveningCurrent = new Date(eveningStart);
+                              
+                              while (eveningCurrent < eveningEnd) {
+                                slots.push({
+                                  time: eveningCurrent.toLocaleTimeString('en-US', { 
+                                    hour: '2-digit', 
+                                    minute: '2-digit',
+                                    hour12: true 
+                                  }),
+                                  type: 'evening'
+                                });
+                                eveningCurrent.setMinutes(eveningCurrent.getMinutes() + 30);
+                              }
+                              
+                              return slots.slice(0, 12).map((slot, index) => (
+                                <span 
+                                  key={index} 
+                                  className={`px-2 py-1 text-xs rounded ${
+                                    slot.type === 'morning' 
+                                      ? 'bg-blue-100 text-blue-800' 
+                                      : 'bg-orange-100 text-orange-800'
+                                  }`}
+                                >
+                                  {slot.time}
+                                </span>
+                              ));
+                            })()}
+                            {(() => {
+                              // Calculate total slots
+                              const morningSlots = Math.floor(
+                                (new Date(`2000-01-01T${daySchedule.morningEnd}`) - 
+                                 new Date(`2000-01-01T${daySchedule.morningStart}`)) / (30 * 60 * 1000)
+                              );
+                              const eveningSlots = Math.floor(
+                                (new Date(`2000-01-01T${daySchedule.eveningEnd}`) - 
+                                 new Date(`2000-01-01T${daySchedule.eveningStart}`)) / (30 * 60 * 1000)
+                              );
+                              const totalSlots = morningSlots + eveningSlots;
+                              
+                              return totalSlots > 12 ? (
+                                <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+                                  +{totalSlots - 12} more
+                                </span>
+                              ) : null;
+                            })()}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1285,9 +1304,9 @@ const Admin = () => {
                   <h4 className="font-medium text-blue-900 mb-2">How it works:</h4>
                   <ul className="text-sm text-blue-800 space-y-1">
                     <li>• Toggle days open/closed to control when customers can schedule pickups</li>
-                    <li>• Add multiple time slots per day (e.g., morning, lunch, evening windows)</li>
-                    <li>• Each time slot creates 30-minute pickup intervals for customers</li>
-                    <li>• Remove time slots you no longer need</li>
+                    <li>• Each open day has two pickup windows: Morning and Evening</li>
+                    <li>• Set custom start and end times for both windows</li>
+                    <li>• Customers will see 30-minute pickup slots within your set hours</li>
                     <li>• Changes are saved automatically</li>
                   </ul>
                 </div>
