@@ -40,6 +40,18 @@ const Admin = () => {
     sortOrder: 0
   });
 
+  // Schedule state
+  const [schedule, setSchedule] = useState({
+    monday: { open: false, startTime: '08:00', endTime: '18:00' },
+    tuesday: { open: false, startTime: '08:00', endTime: '18:00' },
+    wednesday: { open: false, startTime: '08:00', endTime: '18:00' },
+    thursday: { open: false, startTime: '08:00', endTime: '18:00' },
+    friday: { open: false, startTime: '08:00', endTime: '18:00' },
+    saturday: { open: false, startTime: '08:00', endTime: '18:00' },
+    sunday: { open: false, startTime: '08:00', endTime: '18:00' }
+  });
+  const [scheduleLoading, setScheduleLoading] = useState(false);
+
   const defaultCategories = [
     'High Protein',
     'Quality Carbs', 
@@ -159,6 +171,55 @@ const Admin = () => {
       console.error('Error fetching categories:', error);
     } finally {
       setCategoriesLoading(false);
+    }
+  };
+
+  // Schedule functions
+  const fetchSchedule = async () => {
+    setScheduleLoading(true);
+    try {
+      const response = await fetch('https://defiant-meals-backend.onrender.com/api/schedule');
+      if (response.ok) {
+        const data = await response.json();
+        if (data) {
+          setSchedule(data);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching schedule:', error);
+    } finally {
+      setScheduleLoading(false);
+    }
+  };
+
+  const updateSchedule = async (day, field, value) => {
+    const updatedSchedule = {
+      ...schedule,
+      [day]: {
+        ...schedule[day],
+        [field]: value
+      }
+    };
+    setSchedule(updatedSchedule);
+
+    try {
+      const response = await fetch('https://defiant-meals-backend.onrender.com/api/schedule', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedSchedule)
+      });
+
+      if (!response.ok) {
+        console.error('Failed to update schedule');
+        // Revert on error
+        fetchSchedule();
+      }
+    } catch (error) {
+      console.error('Error updating schedule:', error);
+      // Revert on error
+      fetchSchedule();
     }
   };
 
@@ -397,6 +458,8 @@ const Admin = () => {
       fetchCategories(); // Load categories for the dropdown
     } else if (activeTab === 'categories') {
       fetchCategories();
+    } else if (activeTab === 'schedule') {
+      fetchSchedule();
     }
   }, [activeTab, selectedDate]);
 
@@ -449,13 +512,28 @@ const Admin = () => {
     ...categories.filter(cat => cat.available).map(cat => cat.name)
   ])];
 
+  // Helper function for schedule display
+  const formatScheduleDisplay = () => {
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    const openDays = days.filter(day => schedule[day].open);
+    
+    if (openDays.length === 0) return 'Closed all week';
+    
+    return openDays.map(day => {
+      const dayName = day.charAt(0).toUpperCase() + day.slice(1);
+      const start = schedule[day].startTime;
+      const end = schedule[day].endTime;
+      return `${dayName}: ${start} - ${end}`;
+    }).join(', ');
+  };
+
   return (
     <div className="min-h-screen py-8 bg-gray-50">
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Restaurant Dashboard</h1>
-          <p className="text-gray-600">Manage orders, menu items, and categories</p>
+          <p className="text-gray-600">Manage orders, menu items, categories, and pickup schedule</p>
         </div>
 
         {/* Tabs */}
@@ -490,6 +568,16 @@ const Admin = () => {
               }`}
             >
               Category Management
+            </button>
+            <button
+              onClick={() => setActiveTab('schedule')}
+              className={`px-6 py-2 rounded-md font-semibold transition duration-300 ${
+                activeTab === 'schedule'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              Pickup Schedule
             </button>
           </div>
         </div>
@@ -1042,6 +1130,130 @@ const Admin = () => {
                     <p className="text-gray-400 text-sm mt-2">Click "Add New Category" to get started.</p>
                   </div>
                 )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Schedule Tab */}
+        {activeTab === 'schedule' && (
+          <div>
+            {/* Schedule Header */}
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-semibold">Pickup Schedule</h2>
+              <div className="bg-white rounded-lg shadow px-4 py-2">
+                <p className="text-sm text-gray-600">Current schedule: {formatScheduleDisplay()}</p>
+              </div>
+            </div>
+
+            {/* Schedule Management */}
+            {scheduleLoading ? (
+              <div className="text-center py-8">Loading schedule...</div>
+            ) : (
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold mb-6">Set Pickup Hours for Each Day</h3>
+                
+                <div className="space-y-6">
+                  {Object.entries(schedule).map(([day, daySchedule]) => (
+                    <div key={day} className="border rounded-lg p-4">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                        {/* Day name */}
+                        <div className="font-medium text-gray-700 capitalize">
+                          {day}
+                        </div>
+                        
+                        {/* Open/Closed toggle */}
+                        <div>
+                          <label className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              checked={daySchedule.open}
+                              onChange={(e) => updateSchedule(day, 'open', e.target.checked)}
+                              className="rounded"
+                            />
+                            <span className="text-sm font-medium text-gray-700">
+                              {daySchedule.open ? 'Open' : 'Closed'}
+                            </span>
+                          </label>
+                        </div>
+                        
+                        {/* Start time */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                          <input
+                            type="time"
+                            value={daySchedule.startTime}
+                            onChange={(e) => updateSchedule(day, 'startTime', e.target.value)}
+                            disabled={!daySchedule.open}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                          />
+                        </div>
+                        
+                        {/* End time */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                          <input
+                            type="time"
+                            value={daySchedule.endTime}
+                            onChange={(e) => updateSchedule(day, 'endTime', e.target.value)}
+                            disabled={!daySchedule.open}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                          />
+                        </div>
+                      </div>
+                      
+                      {/* Preview time slots for open days */}
+                      {daySchedule.open && (
+                        <div className="mt-3 pt-3 border-t">
+                          <p className="text-sm text-gray-600 mb-2">Available pickup slots:</p>
+                          <div className="flex flex-wrap gap-2">
+                            {(() => {
+                              const slots = [];
+                              const start = new Date(`2000-01-01T${daySchedule.startTime}`);
+                              const end = new Date(`2000-01-01T${daySchedule.endTime}`);
+                              const current = new Date(start);
+                              
+                              while (current < end) {
+                                slots.push(current.toLocaleTimeString('en-US', { 
+                                  hour: '2-digit', 
+                                  minute: '2-digit',
+                                  hour12: true 
+                                }));
+                                current.setMinutes(current.getMinutes() + 30);
+                              }
+                              
+                              return slots.slice(0, 8).map(slot => (
+                                <span key={slot} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
+                                  {slot}
+                                </span>
+                              ));
+                            })()}
+                            {(() => {
+                              const start = new Date(`2000-01-01T${daySchedule.startTime}`);
+                              const end = new Date(`2000-01-01T${daySchedule.endTime}`);
+                              const totalSlots = Math.floor((end - start) / (30 * 60 * 1000));
+                              return totalSlots > 8 ? (
+                                <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+                                  +{totalSlots - 8} more
+                                </span>
+                              ) : null;
+                            })()}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+                  <h4 className="font-medium text-blue-900 mb-2">How it works:</h4>
+                  <ul className="text-sm text-blue-800 space-y-1">
+                    <li>• Toggle days open/closed to control when customers can schedule pickups</li>
+                    <li>• Set start and end times for each day</li>
+                    <li>• Customers will see 30-minute pickup slots within your operating hours</li>
+                    <li>• Changes are saved automatically</li>
+                  </ul>
+                </div>
               </div>
             )}
           </div>
