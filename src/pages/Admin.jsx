@@ -28,7 +28,19 @@ const Admin = () => {
     imageUrl: ''
   });
 
-  const categories = [
+  // Categories state
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [showCategoryForm, setShowCategoryForm] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [categoryFormData, setCategoryFormData] = useState({
+    name: '',
+    description: '',
+    available: true,
+    sortOrder: 0
+  });
+
+  const defaultCategories = [
     'High Protein',
     'Quality Carbs', 
     'Healthier Options',
@@ -132,6 +144,127 @@ const Admin = () => {
     } finally {
       setMenuLoading(false);
     }
+  };
+
+  // Category functions
+  const fetchCategories = async () => {
+    setCategoriesLoading(true);
+    try {
+      const response = await fetch('https://defiant-meals-backend.onrender.com/api/categories');
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data);
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
+
+  const handleCategoryInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setCategoryFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handleCategorySubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const url = editingCategory 
+        ? `https://defiant-meals-backend.onrender.com/api/categories/${editingCategory._id}`
+        : 'https://defiant-meals-backend.onrender.com/api/categories';
+      
+      const method = editingCategory ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...categoryFormData,
+          sortOrder: parseInt(categoryFormData.sortOrder)
+        })
+      });
+
+      if (response.ok) {
+        fetchCategories();
+        resetCategoryForm();
+        setShowCategoryForm(false);
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || 'Failed to save category');
+      }
+    } catch (error) {
+      console.error('Error saving category:', error);
+      alert('Error saving category');
+    }
+  };
+
+  const deleteCategory = async (id) => {
+    if (window.confirm('Are you sure you want to delete this category? This may affect menu items using this category.')) {
+      try {
+        const response = await fetch(`https://defiant-meals-backend.onrender.com/api/categories/${id}`, {
+          method: 'DELETE'
+        });
+        
+        if (response.ok) {
+          fetchCategories();
+        } else {
+          const errorData = await response.json();
+          alert(errorData.message || 'Failed to delete category');
+        }
+      } catch (error) {
+        console.error('Error deleting category:', error);
+        alert('Error deleting category');
+      }
+    }
+  };
+
+  const toggleCategoryAvailability = async (id, currentStatus) => {
+    try {
+      const response = await fetch(`https://defiant-meals-backend.onrender.com/api/categories/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ available: !currentStatus })
+      });
+
+      if (response.ok) {
+        fetchCategories();
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || 'Failed to update category');
+      }
+    } catch (error) {
+      console.error('Error updating category availability:', error);
+      alert('Error updating category');
+    }
+  };
+
+  const resetCategoryForm = () => {
+    setCategoryFormData({
+      name: '',
+      description: '',
+      available: true,
+      sortOrder: 0
+    });
+    setEditingCategory(null);
+  };
+
+  const startCategoryEdit = (category) => {
+    setCategoryFormData({
+      name: category.name,
+      description: category.description || '',
+      available: category.available,
+      sortOrder: category.sortOrder || 0
+    });
+    setEditingCategory(category);
+    setShowCategoryForm(true);
   };
 
   const handleInputChange = (e) => {
@@ -261,6 +394,9 @@ const Admin = () => {
       return () => stopAutoRefresh();
     } else if (activeTab === 'menu') {
       fetchMenuItems();
+      fetchCategories(); // Load categories for the dropdown
+    } else if (activeTab === 'categories') {
+      fetchCategories();
     }
   }, [activeTab, selectedDate]);
 
@@ -307,13 +443,19 @@ const Admin = () => {
     }
   };
 
+  // Get available categories for menu form
+  const availableCategories = [...new Set([
+    ...defaultCategories,
+    ...categories.filter(cat => cat.available).map(cat => cat.name)
+  ])];
+
   return (
     <div className="min-h-screen py-8 bg-gray-50">
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Restaurant Dashboard</h1>
-          <p className="text-gray-600">Manage orders and menu items</p>
+          <p className="text-gray-600">Manage orders, menu items, and categories</p>
         </div>
 
         {/* Tabs */}
@@ -338,6 +480,16 @@ const Admin = () => {
               }`}
             >
               Menu Management
+            </button>
+            <button
+              onClick={() => setActiveTab('categories')}
+              className={`px-6 py-2 rounded-md font-semibold transition duration-300 ${
+                activeTab === 'categories'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              Category Management
             </button>
           </div>
         </div>
@@ -580,7 +732,7 @@ const Admin = () => {
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                      {categories.map(cat => (
+                      {availableCategories.map(cat => (
                         <option key={cat} value={cat}>{cat}</option>
                       ))}
                     </select>
@@ -733,6 +885,163 @@ const Admin = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Categories Tab */}
+        {activeTab === 'categories' && (
+          <div>
+            {/* Category Header */}
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-semibold">Categories</h2>
+              <button
+                onClick={() => {
+                  resetCategoryForm();
+                  setShowCategoryForm(true);
+                }}
+                className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition duration-300"
+              >
+                Add New Category
+              </button>
+            </div>
+
+            {/* Add/Edit Category Form */}
+            {showCategoryForm && (
+              <div className="bg-white rounded-lg shadow p-6 mb-6">
+                <h3 className="text-lg font-semibold mb-4">
+                  {editingCategory ? 'Edit Category' : 'Add New Category'}
+                </h3>
+                <form onSubmit={handleCategorySubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={categoryFormData.name}
+                      onChange={handleCategoryInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Sort Order</label>
+                    <input
+                      type="number"
+                      name="sortOrder"
+                      value={categoryFormData.sortOrder}
+                      onChange={handleCategoryInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea
+                      name="description"
+                      value={categoryFormData.description}
+                      onChange={handleCategoryInputChange}
+                      rows="3"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div className="md:col-span-2">
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        name="available"
+                        checked={categoryFormData.available}
+                        onChange={handleCategoryInputChange}
+                        className="rounded"
+                      />
+                      <span className="text-sm font-medium text-gray-700">Available for use</span>
+                    </label>
+                  </div>
+                  
+                  <div className="md:col-span-2 flex space-x-4">
+                    <button
+                      type="submit"
+                      className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition duration-300"
+                    >
+                      {editingCategory ? 'Update Category' : 'Add Category'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowCategoryForm(false);
+                        resetCategoryForm();
+                      }}
+                      className="bg-gray-400 text-white px-6 py-2 rounded-md hover:bg-gray-500 transition duration-300"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* Categories List */}
+            {categoriesLoading ? (
+              <div className="text-center py-8">Loading categories...</div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {categories.map(category => (
+                  <div key={category._id} className="bg-white rounded-lg shadow p-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <h3 className="text-lg font-semibold">{category.name}</h3>
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        category.available 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {category.available ? 'Available' : 'Disabled'}
+                      </span>
+                    </div>
+                    
+                    {category.description && (
+                      <p className="text-gray-600 text-sm mb-4">{category.description}</p>
+                    )}
+                    
+                    <div className="text-xs text-gray-500 mb-4">
+                      Sort Order: {category.sortOrder || 0}
+                    </div>
+                    
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => startCategoryEdit(category)}
+                        className="flex-1 bg-blue-600 text-white py-1 px-3 text-sm rounded hover:bg-blue-700 transition duration-300"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => toggleCategoryAvailability(category._id, category.available)}
+                        className={`flex-1 py-1 px-3 text-sm rounded transition duration-300 ${
+                          category.available
+                            ? 'bg-yellow-600 text-white hover:bg-yellow-700'
+                            : 'bg-green-600 text-white hover:bg-green-700'
+                        }`}
+                      >
+                        {category.available ? 'Disable' : 'Enable'}
+                      </button>
+                      <button
+                        onClick={() => deleteCategory(category._id)}
+                        className="flex-1 bg-red-600 text-white py-1 px-3 text-sm rounded hover:bg-red-700 transition duration-300"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                
+                {categories.length === 0 && (
+                  <div className="md:col-span-3 bg-white rounded-lg shadow p-8 text-center">
+                    <p className="text-gray-500 text-lg">No categories created yet.</p>
+                    <p className="text-gray-400 text-sm mt-2">Click "Add New Category" to get started.</p>
+                  </div>
+                )}
               </div>
             )}
           </div>
