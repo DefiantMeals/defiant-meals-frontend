@@ -1,8 +1,144 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const Pickup = ({ orderData, setCurrentPage, setOrderData }) => {
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
+  const [schedule, setSchedule] = useState(null);
+  const [availableTimeSlots, setAvailableTimeSlots] = useState([]);
+  const [scheduleLoading, setScheduleLoading] = useState(true);
+
+  // Fetch schedule from backend
+  useEffect(() => {
+    const fetchSchedule = async () => {
+      try {
+        const response = await fetch('https://defiant-meals-backend.onrender.com/api/schedule');
+        if (response.ok) {
+          const data = await response.json();
+          setSchedule(data);
+        } else {
+          console.log('Using fallback schedule');
+          // Fallback schedule if API fails
+          setSchedule({
+            monday: { open: true, morningStart: '07:00', morningEnd: '21:00', eveningStart: '16:00', eveningEnd: '21:00' },
+            tuesday: { open: true, morningStart: '07:00', morningEnd: '21:00', eveningStart: '16:00', eveningEnd: '21:00' },
+            wednesday: { open: true, morningStart: '07:00', morningEnd: '21:00', eveningStart: '16:00', eveningEnd: '21:00' },
+            thursday: { open: true, morningStart: '07:00', morningEnd: '21:00', eveningStart: '16:00', eveningEnd: '21:00' },
+            friday: { open: true, morningStart: '07:00', morningEnd: '21:00', eveningStart: '16:00', eveningEnd: '21:00' },
+            saturday: { open: true, morningStart: '07:00', morningEnd: '21:00', eveningStart: '16:00', eveningEnd: '21:00' },
+            sunday: { open: true, morningStart: '08:00', morningEnd: '20:00', eveningStart: '16:00', eveningEnd: '20:00' }
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching schedule:', error);
+        // Use fallback schedule
+        setSchedule({
+          monday: { open: true, morningStart: '07:00', morningEnd: '21:00', eveningStart: '16:00', eveningEnd: '21:00' },
+          tuesday: { open: true, morningStart: '07:00', morningEnd: '21:00', eveningStart: '16:00', eveningEnd: '21:00' },
+          wednesday: { open: true, morningStart: '07:00', morningEnd: '21:00', eveningStart: '16:00', eveningEnd: '21:00' },
+          thursday: { open: true, morningStart: '07:00', morningEnd: '21:00', eveningStart: '16:00', eveningEnd: '21:00' },
+          friday: { open: true, morningStart: '07:00', morningEnd: '21:00', eveningStart: '16:00', eveningEnd: '21:00' },
+          saturday: { open: true, morningStart: '07:00', morningEnd: '21:00', eveningStart: '16:00', eveningEnd: '21:00' },
+          sunday: { open: true, morningStart: '08:00', morningEnd: '20:00', eveningStart: '16:00', eveningEnd: '20:00' }
+        });
+      } finally {
+        setScheduleLoading(false);
+      }
+    };
+
+    fetchSchedule();
+  }, []);
+
+  // Generate time slots based on selected date and schedule
+  useEffect(() => {
+    if (!selectedDate || !schedule) {
+      setAvailableTimeSlots([]);
+      return;
+    }
+
+    const selectedDateObj = new Date(selectedDate);
+    const dayName = selectedDateObj.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+    const daySchedule = schedule[dayName];
+
+    if (!daySchedule || !daySchedule.open) {
+      setAvailableTimeSlots([]);
+      return;
+    }
+
+    const slots = [];
+
+    // Generate morning slots
+    if (daySchedule.morningStart && daySchedule.morningEnd) {
+      const morningStart = new Date(`2000-01-01T${daySchedule.morningStart}`);
+      const morningEnd = new Date(`2000-01-01T${daySchedule.morningEnd}`);
+      const current = new Date(morningStart);
+
+      while (current < morningEnd) {
+        slots.push(current.toLocaleTimeString('en-US', { 
+          hour: '2-digit', 
+          minute: '2-digit',
+          hour12: true 
+        }));
+        current.setMinutes(current.getMinutes() + 30);
+      }
+    }
+
+    // Generate evening slots (if different from morning)
+    if (daySchedule.eveningStart && daySchedule.eveningEnd && 
+        (daySchedule.eveningStart !== daySchedule.morningStart || daySchedule.eveningEnd !== daySchedule.morningEnd)) {
+      const eveningStart = new Date(`2000-01-01T${daySchedule.eveningStart}`);
+      const eveningEnd = new Date(`2000-01-01T${daySchedule.eveningEnd}`);
+      const current = new Date(eveningStart);
+
+      while (current < eveningEnd) {
+        const timeString = current.toLocaleTimeString('en-US', { 
+          hour: '2-digit', 
+          minute: '2-digit',
+          hour12: true 
+        });
+        // Avoid duplicates
+        if (!slots.includes(timeString)) {
+          slots.push(timeString);
+        }
+        current.setMinutes(current.getMinutes() + 30);
+      }
+    }
+
+    setAvailableTimeSlots(slots);
+    // Reset selected time when date changes
+    setSelectedTime('');
+  }, [selectedDate, schedule]);
+
+  // Generate display hours for location info
+  const getLocationHours = () => {
+    if (!schedule) return 'Loading hours...';
+    
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    const openDays = days.filter(day => schedule[day]?.open);
+    
+    if (openDays.length === 0) return 'Currently closed';
+    
+    // Group consecutive days with same hours
+    const groupedDays = [];
+    let currentGroup = null;
+    
+    openDays.forEach(day => {
+      const daySchedule = schedule[day];
+      const hours = `${daySchedule.morningStart}-${daySchedule.eveningEnd}`;
+      
+      if (!currentGroup || currentGroup.hours !== hours) {
+        currentGroup = { days: [day], hours: hours };
+        groupedDays.push(currentGroup);
+      } else {
+        currentGroup.days.push(day);
+      }
+    });
+    
+    return groupedDays.map(group => {
+      const dayNames = group.days.map(day => day.charAt(0).toUpperCase() + day.slice(1, 3));
+      const dayRange = dayNames.length > 1 ? `${dayNames[0]}-${dayNames[dayNames.length - 1]}` : dayNames[0];
+      return `${dayRange}: ${group.hours}`;
+    }).join(', ');
+  };
 
   // If no order data, redirect back to menu
   if (!orderData) {
@@ -27,16 +163,8 @@ const Pickup = ({ orderData, setCurrentPage, setOrderData }) => {
     name: 'Defiant Meals',
     address: '123 Main Street, Phnom Penh',
     phone: '(855) 123-4567',
-    hours: 'Mon-Sat: 7:00 AM - 9:00 PM, Sun: 8:00 AM - 8:00 PM'
+    hours: getLocationHours()
   };
-
-  const timeSlots = [
-    '8:00 AM', '8:30 AM', '9:00 AM', '9:30 AM', '10:00 AM',
-    '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM',
-    '1:00 PM', '1:30 PM', '2:00 PM', '2:30 PM', '3:00 PM',
-    '3:30 PM', '4:00 PM', '4:30 PM', '5:00 PM', '5:30 PM',
-    '6:00 PM', '6:30 PM', '7:00 PM', '7:30 PM', '8:00 PM'
-  ];
 
   const continueToPayment = () => {
     if (!selectedDate || !selectedTime) {
@@ -125,7 +253,7 @@ const Pickup = ({ orderData, setCurrentPage, setOrderData }) => {
                         </p>
                         <p className="flex items-center">
                           <span className="text-lg mr-2">🕒</span>
-                          {location.hours}
+                          {scheduleLoading ? 'Loading hours...' : location.hours}
                         </p>
                       </div>
                     </div>
@@ -157,21 +285,33 @@ const Pickup = ({ orderData, setCurrentPage, setOrderData }) => {
                     <label className="block text-sm font-medium text-gray-700 mb-3">
                       Choose Pickup Time
                     </label>
-                    <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-3">
-                      {timeSlots.map(time => (
-                        <button
-                          key={time}
-                          onClick={() => setSelectedTime(time)}
-                          className={`p-2 text-sm rounded-lg border transition duration-300 ${
-                            selectedTime === time
-                              ? 'bg-blue-600 text-white border-blue-600'
-                              : 'bg-white text-gray-700 border-gray-300 hover:border-blue-300 hover:bg-blue-50'
-                          }`}
-                        >
-                          {time}
-                        </button>
-                      ))}
-                    </div>
+                    {!selectedDate ? (
+                      <div className="flex items-center justify-center h-64 border border-gray-200 rounded-lg bg-gray-50">
+                        <p className="text-gray-500">Please select a date first</p>
+                      </div>
+                    ) : availableTimeSlots.length === 0 ? (
+                      <div className="flex items-center justify-center h-64 border border-gray-200 rounded-lg bg-gray-50">
+                        <p className="text-gray-500">
+                          {scheduleLoading ? 'Loading available times...' : 'No pickup times available for this date'}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-3">
+                        {availableTimeSlots.map(time => (
+                          <button
+                            key={time}
+                            onClick={() => setSelectedTime(time)}
+                            className={`p-2 text-sm rounded-lg border transition duration-300 ${
+                              selectedTime === time
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : 'bg-white text-gray-700 border-gray-300 hover:border-blue-300 hover:bg-blue-50'
+                            }`}
+                          >
+                            {time}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
