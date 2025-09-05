@@ -1141,7 +1141,7 @@ const Admin = () => {
             {/* Schedule Header */}
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-semibold">Pickup Schedule</h2>
-              <div className="bg-white rounded-lg shadow px-4 py-2">
+              <div className="bg-white rounded-lg shadow px-4 py-2 max-w-2xl">
                 <p className="text-sm text-gray-600">Current schedule: {formatScheduleDisplay()}</p>
               </div>
             </div>
@@ -1151,19 +1151,15 @@ const Admin = () => {
               <div className="text-center py-8">Loading schedule...</div>
             ) : (
               <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold mb-6">Set Pickup Hours for Each Day</h3>
+                <h3 className="text-lg font-semibold mb-6">Set Pickup Time Slots for Each Day</h3>
                 
                 <div className="space-y-6">
                   {Object.entries(schedule).map(([day, daySchedule]) => (
-                    <div key={day} className="border rounded-lg p-4">
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
-                        {/* Day name */}
-                        <div className="font-medium text-gray-700 capitalize">
-                          {day}
-                        </div>
-                        
-                        {/* Open/Closed toggle */}
-                        <div>
+                    <div key={day} className="border rounded-lg p-6">
+                      {/* Day header */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-4">
+                          <h4 className="font-medium text-gray-700 capitalize text-lg">{day}</h4>
                           <label className="flex items-center space-x-2">
                             <input
                               type="checkbox"
@@ -1177,68 +1173,108 @@ const Admin = () => {
                           </label>
                         </div>
                         
-                        {/* Start time */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-                          <input
-                            type="time"
-                            value={daySchedule.startTime}
-                            onChange={(e) => updateSchedule(day, 'startTime', e.target.value)}
-                            disabled={!daySchedule.open}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-                          />
-                        </div>
-                        
-                        {/* End time */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-                          <input
-                            type="time"
-                            value={daySchedule.endTime}
-                            onChange={(e) => updateSchedule(day, 'endTime', e.target.value)}
-                            disabled={!daySchedule.open}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-                          />
-                        </div>
+                        {daySchedule.open && (
+                          <button
+                            onClick={() => addTimeSlot(day)}
+                            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition duration-300 text-sm"
+                          >
+                            Add Time Slot
+                          </button>
+                        )}
                       </div>
                       
-                      {/* Preview time slots for open days */}
+                      {/* Time slots */}
                       {daySchedule.open && (
-                        <div className="mt-3 pt-3 border-t">
-                          <p className="text-sm text-gray-600 mb-2">Available pickup slots:</p>
-                          <div className="flex flex-wrap gap-2">
-                            {(() => {
-                              const slots = [];
-                              const start = new Date(`2000-01-01T${daySchedule.startTime}`);
-                              const end = new Date(`2000-01-01T${daySchedule.endTime}`);
-                              const current = new Date(start);
-                              
-                              while (current < end) {
-                                slots.push(current.toLocaleTimeString('en-US', { 
-                                  hour: '2-digit', 
-                                  minute: '2-digit',
-                                  hour12: true 
-                                }));
-                                current.setMinutes(current.getMinutes() + 30);
-                              }
-                              
-                              return slots.slice(0, 8).map(slot => (
-                                <span key={slot} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
-                                  {slot}
-                                </span>
-                              ));
-                            })()}
-                            {(() => {
-                              const start = new Date(`2000-01-01T${daySchedule.startTime}`);
-                              const end = new Date(`2000-01-01T${daySchedule.endTime}`);
-                              const totalSlots = Math.floor((end - start) / (30 * 60 * 1000));
-                              return totalSlots > 8 ? (
-                                <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
-                                  +{totalSlots - 8} more
-                                </span>
-                              ) : null;
-                            })()}
-                          </div>
+                        <div className="space-y-3">
+                          {daySchedule.timeSlots.length === 0 ? (
+                            <p className="text-gray-500 text-sm italic">No time slots added yet. Click "Add Time Slot" to create pickup windows.</p>
+                          ) : (
+                            daySchedule.timeSlots.map((slot, index) => (
+                              <div key={slot.id} className="flex items-center space-x-4 bg-gray-50 p-4 rounded-lg">
+                                <div className="font-medium text-gray-700 min-w-0">
+                                  Slot {index + 1}:
+                                </div>
+                                
+                                <div className="flex items-center space-x-2">
+                                  <label className="text-sm font-medium text-gray-700">Start:</label>
+                                  <input
+                                    type="time"
+                                    value={slot.startTime}
+                                    onChange={(e) => updateTimeSlot(day, slot.id, 'startTime', e.target.value)}
+                                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  />
+                                </div>
+                                
+                                <div className="flex items-center space-x-2">
+                                  <label className="text-sm font-medium text-gray-700">End:</label>
+                                  <input
+                                    type="time"
+                                    value={slot.endTime}
+                                    onChange={(e) => updateTimeSlot(day, slot.id, 'endTime', e.target.value)}
+                                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  />
+                                </div>
+                                
+                                <button
+                                  onClick={() => removeTimeSlot(day, slot.id)}
+                                  className="bg-red-600 text-white px-3 py-2 rounded-md hover:bg-red-700 transition duration-300 text-sm"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            ))
+                          )}
+                          
+                          {/* Preview available pickup times */}
+                          {daySchedule.timeSlots.length > 0 && (
+                            <div className="mt-4 pt-4 border-t">
+                              <p className="text-sm text-gray-600 mb-2">Available pickup slots (30-min intervals):</p>
+                              <div className="flex flex-wrap gap-2">
+                                {(() => {
+                                  const allSlots = [];
+                                  daySchedule.timeSlots.forEach(slot => {
+                                    const start = new Date(`2000-01-01T${slot.startTime}`);
+                                    const end = new Date(`2000-01-01T${slot.endTime}`);
+                                    const current = new Date(start);
+                                    
+                                    while (current < end) {
+                                      allSlots.push(current.toLocaleTimeString('en-US', { 
+                                        hour: '2-digit', 
+                                        minute: '2-digit',
+                                        hour12: true 
+                                      }));
+                                      current.setMinutes(current.getMinutes() + 30);
+                                    }
+                                  });
+                                  
+                                  // Remove duplicates and sort
+                                  const uniqueSlots = [...new Set(allSlots)].sort((a, b) => {
+                                    const timeA = new Date(`2000-01-01 ${a}`);
+                                    const timeB = new Date(`2000-01-01 ${b}`);
+                                    return timeA - timeB;
+                                  });
+                                  
+                                  return uniqueSlots.slice(0, 12).map(slot => (
+                                    <span key={slot} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
+                                      {slot}
+                                    </span>
+                                  ));
+                                })()}
+                                {(() => {
+                                  const totalSlots = daySchedule.timeSlots.reduce((total, slot) => {
+                                    const start = new Date(`2000-01-01T${slot.startTime}`);
+                                    const end = new Date(`2000-01-01T${slot.endTime}`);
+                                    return total + Math.floor((end - start) / (30 * 60 * 1000));
+                                  }, 0);
+                                  return totalSlots > 12 ? (
+                                    <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+                                      +{totalSlots - 12} more
+                                    </span>
+                                  ) : null;
+                                })()}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1249,8 +1285,9 @@ const Admin = () => {
                   <h4 className="font-medium text-blue-900 mb-2">How it works:</h4>
                   <ul className="text-sm text-blue-800 space-y-1">
                     <li>• Toggle days open/closed to control when customers can schedule pickups</li>
-                    <li>• Set start and end times for each day</li>
-                    <li>• Customers will see 30-minute pickup slots within your operating hours</li>
+                    <li>• Add multiple time slots per day (e.g., morning, lunch, evening windows)</li>
+                    <li>• Each time slot creates 30-minute pickup intervals for customers</li>
+                    <li>• Remove time slots you no longer need</li>
                     <li>• Changes are saved automatically</li>
                   </ul>
                 </div>
