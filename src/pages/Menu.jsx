@@ -4,17 +4,49 @@ const API_BASE_URL = 'https://defiant-meals-backend.onrender.com';
 
 const Menu = ({ handleAddToCart }) => {
   const [menuItems, setMenuItems] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All Items');
   const [loading, setLoading] = useState(true);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
 
-  const categories = [
-    { id: 'All Items', name: 'All Items' },
-    { id: 'High Protein', name: 'High Protein' },
-    { id: 'Quality Carbs', name: 'Quality Carbs' },
-    { id: 'Healthier Options', name: 'Healthier Options' },
-    { id: 'Snacks', name: 'Snacks' }
-  ];
+  // Fetch categories from database
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/categories`);
+        const data = await response.json();
+        
+        // Filter available categories and sort by sortOrder
+        const availableCategories = data
+          .filter(cat => cat.available)
+          .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+        
+        // Add "All Items" at the beginning
+        const categoriesWithAll = [
+          { id: 'All Items', name: 'All Items' },
+          ...availableCategories.map(cat => ({ id: cat.name, name: cat.name }))
+        ];
+        
+        setCategories(categoriesWithAll);
+      } catch (err) {
+        console.error('Failed to load categories:', err);
+        // Fallback to hardcoded categories if API fails
+        setCategories([
+          { id: 'All Items', name: 'All Items' },
+          { id: 'High Protein', name: 'High Protein' },
+          { id: 'Quality Carbs', name: 'Quality Carbs' },
+          { id: 'Healthier Options', name: 'Healthier Options' },
+          { id: 'Snacks', name: 'Snacks' }
+        ]);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
 
+    fetchCategories();
+  }, []);
+
+  // Fetch menu items
   useEffect(() => {
     const fetchMenuItems = async () => {
       try {
@@ -52,19 +84,25 @@ const Menu = ({ handleAddToCart }) => {
 
         {/* Category Filter */}
         <div className="flex flex-wrap justify-center gap-4 mb-12">
-          {categories.map(category => (
-            <button
-              key={category.id}
-              onClick={() => setSelectedCategory(category.id)}
-              className={`px-6 py-3 rounded-full font-semibold transition duration-300 ${
-                selectedCategory === category.id
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              {category.name}
-            </button>
-          ))}
+          {categoriesLoading ? (
+            <div className="text-center py-4">
+              <p className="text-gray-500">Loading categories...</p>
+            </div>
+          ) : (
+            categories.map(category => (
+              <button
+                key={category.id}
+                onClick={() => setSelectedCategory(category.id)}
+                className={`px-6 py-3 rounded-full font-semibold transition duration-300 ${
+                  selectedCategory === category.id
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                {category.name}
+              </button>
+            ))
+          )}
         </div>
 
         {/* Loading State */}
