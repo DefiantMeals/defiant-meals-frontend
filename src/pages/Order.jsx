@@ -7,6 +7,7 @@ const Order = ({ cartItems, handleUpdateQuantity, handleRemoveFromCart, setCurre
     email: '',
     phone: ''
   });
+  const [customerNotes, setCustomerNotes] = useState('');
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const tax = subtotal * 0.08; // 8% tax
@@ -31,10 +32,16 @@ const Order = ({ cartItems, handleUpdateQuantity, handleRemoveFromCart, setCurre
       customer: customerInfo,
       items: cartItems.map(item => ({
         id: item.id,
+        originalId: item.originalId || item.id,
         name: item.name,
         price: item.price,
-        quantity: item.quantity
+        basePrice: item.basePrice || item.price,
+        quantity: item.quantity,
+        selectedFlavor: item.selectedFlavor || null,
+        selectedAddons: item.selectedAddons || [],
+        customizations: item.customizations || {}
       })),
+      customerNotes: customerNotes.trim(),
       subtotal: subtotal,
       tax: tax,
       total: total
@@ -67,6 +74,17 @@ const Order = ({ cartItems, handleUpdateQuantity, handleRemoveFromCart, setCurre
       </div>
     );
   }
+
+  const formatCustomizations = (item) => {
+    const customizations = [];
+    if (item.selectedFlavor && item.selectedFlavor.name) {
+      customizations.push(`Flavor: ${item.selectedFlavor.name}`);
+    }
+    if (item.selectedAddons && item.selectedAddons.length > 0) {
+      customizations.push(`Add-ons: ${item.selectedAddons.map(addon => addon.name).join(', ')}`);
+    }
+    return customizations.join(' | ');
+  };
 
   return (
     <div className="min-h-screen py-8">
@@ -137,18 +155,47 @@ const Order = ({ cartItems, handleUpdateQuantity, handleRemoveFromCart, setCurre
               </div>
             </div>
 
+            {/* Customer Notes Section */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-2xl font-semibold mb-4">Special Instructions</h2>
+              <p className="text-gray-600 text-sm mb-4">
+                Any special requests or notes for the kitchen? (allergies, dietary restrictions, etc.)
+              </p>
+              <textarea
+                value={customerNotes}
+                onChange={(e) => setCustomerNotes(e.target.value)}
+                placeholder="Enter any special instructions for your order..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+                rows="4"
+                maxLength="500"
+              />
+              <div className="text-right text-sm text-gray-500 mt-1">
+                {customerNotes.length}/500 characters
+              </div>
+            </div>
+
             {/* Cart Items */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-2xl font-semibold mb-6">Cart Items</h2>
               
               <div className="space-y-4">
                 {cartItems.map(item => (
-                  <div key={item.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                    <div className="flex items-center space-x-4">
+                  <div key={item.id} className="flex items-start justify-between p-4 border border-gray-200 rounded-lg">
+                    <div className="flex items-start space-x-4 flex-grow">
                       <div className="text-3xl">{item.image || '🍽️'}</div>
-                      <div>
+                      <div className="flex-grow">
                         <h3 className="font-semibold">{item.name}</h3>
-                        <p className="text-gray-600 text-sm">${item.price.toFixed(2)} each</p>
+                        {formatCustomizations(item) && (
+                          <p className="text-sm text-blue-600 mt-1">{formatCustomizations(item)}</p>
+                        )}
+                        <div className="flex items-center mt-2">
+                          <p className="text-gray-600 text-sm mr-4">${item.price.toFixed(2)} each</p>
+                          {item.basePrice && item.basePrice !== item.price && (
+                            <p className="text-xs text-gray-500">
+                              (Base: ${item.basePrice.toFixed(2)})
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
                     
@@ -156,14 +203,14 @@ const Order = ({ cartItems, handleUpdateQuantity, handleRemoveFromCart, setCurre
                       <div className="flex items-center space-x-2">
                         <button
                           onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
-                          className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center"
+                          className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors"
                         >
                           -
                         </button>
                         <span className="w-8 text-center">{item.quantity}</span>
                         <button
                           onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-                          className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center"
+                          className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors"
                         >
                           +
                         </button>
@@ -175,7 +222,7 @@ const Order = ({ cartItems, handleUpdateQuantity, handleRemoveFromCart, setCurre
                       
                       <button
                         onClick={() => handleRemoveFromCart(item.id)}
-                        className="text-red-500 hover:text-red-700 p-1"
+                        className="text-red-500 hover:text-red-700 p-1 transition-colors"
                         title="Remove item"
                       >
                         🗑️

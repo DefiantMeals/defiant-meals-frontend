@@ -2,12 +2,102 @@ import React, { useState, useEffect } from 'react';
 
 const API_BASE_URL = 'https://defiant-meals-backend.onrender.com';
 
-const Menu = ({ handleAddToCart }) => {
+const Menu = ({ handleAddToCart, cartItems = [] }) => {
   const [menuItems, setMenuItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All Items');
   const [loading, setLoading] = useState(true);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [selectedItemOptions, setSelectedItemOptions] = useState({});
+
+  // Get count of specific item in cart
+  const getItemCartCount = (itemId) => {
+    const cartItem = cartItems.find(item => item.id === itemId);
+    return cartItem ? cartItem.quantity : 0;
+  };
+
+  // Handle flavor selection (single select)
+  const handleFlavorChange = (itemId, flavor) => {
+    setSelectedItemOptions(prev => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        selectedFlavor: flavor
+      }
+    }));
+  };
+
+  // Handle addon selection (multi-select)
+  const handleAddonChange = (itemId, addon, isChecked) => {
+    setSelectedItemOptions(prev => {
+      const currentAddons = prev[itemId]?.selectedAddons || [];
+      const newAddons = isChecked 
+        ? [...currentAddons, addon]
+        : currentAddons.filter(a => a.name !== addon.name);
+      
+      return {
+        ...prev,
+        [itemId]: {
+          ...prev[itemId],
+          selectedAddons: newAddons
+        }
+      };
+    });
+  };
+
+  // Calculate total price including add-ons
+  const calculateItemPrice = (basePrice, itemId) => {
+    const options = selectedItemOptions[itemId] || {};
+    let totalPrice = parseFloat(basePrice);
+    
+    // Add flavor price if it has one
+    if (options.selectedFlavor && options.selectedFlavor.price) {
+      totalPrice += parseFloat(options.selectedFlavor.price);
+    }
+    
+    // Add addon prices
+    if (options.selectedAddons) {
+      totalPrice += options.selectedAddons.reduce((sum, addon) => sum + parseFloat(addon.price || 0), 0);
+    }
+    
+    return totalPrice;
+  };
+
+  // Enhanced add to cart with options
+  const handleAddToCartWithOptions = (item) => {
+    const options = selectedItemOptions[item._id] || {};
+    const totalPrice = calculateItemPrice(item.price, item._id);
+    
+    // Create a unique identifier for cart items with different customizations
+    const customizationId = `${item._id}_${options.selectedFlavor?.name || 'no-flavor'}_${(options.selectedAddons || []).map(a => a.name).sort().join('_')}`;
+    
+    const cartItem = {
+      id: customizationId,
+      originalId: item._id,
+      name: item.name,
+      price: totalPrice,
+      basePrice: parseFloat(item.price),
+      description: item.description,
+      category: item.category,
+      calories: item.calories,
+      protein: item.protein,
+      imageUrl: item.imageUrl,
+      selectedFlavor: options.selectedFlavor || null,
+      selectedAddons: options.selectedAddons || [],
+      customizations: {
+        flavor: options.selectedFlavor?.name || null,
+        addons: (options.selectedAddons || []).map(a => a.name)
+      }
+    };
+    
+    handleAddToCart(cartItem);
+    
+    // Clear selections after adding to cart
+    setSelectedItemOptions(prev => ({
+      ...prev,
+      [item._id]: {}
+    }));
+  };
 
   // Fetch categories from database
   useEffect(() => {
@@ -16,12 +106,10 @@ const Menu = ({ handleAddToCart }) => {
         const response = await fetch(`${API_BASE_URL}/api/categories`);
         const data = await response.json();
         
-        // Filter available categories and sort by sortOrder
         const availableCategories = data
           .filter(cat => cat.available)
           .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
         
-        // Add "All Items" at the beginning
         const categoriesWithAll = [
           { id: 'All Items', name: 'All Items' },
           ...availableCategories.map(cat => ({ id: cat.name, name: cat.name }))
@@ -30,7 +118,6 @@ const Menu = ({ handleAddToCart }) => {
         setCategories(categoriesWithAll);
       } catch (err) {
         console.error('Failed to load categories:', err);
-        // Fallback to hardcoded categories if API fails
         setCategories([
           { id: 'All Items', name: 'All Items' },
           { id: 'High Protein', name: 'High Protein' },
@@ -52,8 +139,6 @@ const Menu = ({ handleAddToCart }) => {
       try {
         const response = await fetch(`${API_BASE_URL}/api/menu`);
         const data = await response.json();
-        console.log('Menu items from API:', data);
-        console.log('Items with imageUrl:', data.filter(item => item.imageUrl));
         setMenuItems(data);
       } catch (err) {
         console.error('Failed to load menu items:', err);
@@ -65,10 +150,7 @@ const Menu = ({ handleAddToCart }) => {
     fetchMenuItems();
   }, []);
 
-  // Filter out disabled items first
   const availableItems = menuItems.filter(item => item.available);
-
-  // Then filter by category
   const filteredItems = selectedCategory === 'All Items'
     ? availableItems
     : availableItems.filter(item => item.category === selectedCategory);
@@ -93,10 +175,10 @@ const Menu = ({ handleAddToCart }) => {
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.id)}
-                className={`px-6 py-3 rounded-full font-semibold transition duration-300 ${
+                className={`px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-md ${
                   selectedCategory === category.id
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    ? 'bg-blue-600 text-white shadow-lg scale-105'
+                    : 'bg-gray-200 text-gray-700 hover:bg-blue-100 hover:text-blue-700'
                 }`}
               >
                 {category.name}
@@ -115,63 +197,124 @@ const Menu = ({ handleAddToCart }) => {
         {/* Menu Items Grid */}
         {!loading && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredItems.map(item => (
-              <div key={item._id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition duration-300">
-                {/* Image Section */}
-                {item.imageUrl && (
-                  <div className="relative overflow-hidden">
-                    <img
-                      src={item.imageUrl}
-                      alt={item.name}
-                      className="w-full h-48 object-cover hover:scale-105 transition duration-300"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.parentNode.style.display = 'none';
-                      }}
-                    />
-                  </div>
-                )}
-                
-                {/* Content Section */}
-                <div className="p-6">
-                  {/* Placeholder for items without images */}
-                  {!item.imageUrl && (
-                    <div className="w-full h-32 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg mb-4 flex items-center justify-center">
-                      <span className="text-blue-600 text-sm font-medium">🍽️ Delicious Meal</span>
+            {filteredItems.map(item => {
+              const cartCount = getItemCartCount(item._id);
+              const itemPrice = calculateItemPrice(item.price, item._id);
+              const currentOptions = selectedItemOptions[item._id] || {};
+              
+              return (
+                <div 
+                  key={item._id} 
+                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border-2 border-transparent hover:border-blue-200"
+                >
+                  {/* Image Section */}
+                  {item.imageUrl && (
+                    <div className="relative overflow-hidden">
+                      <img
+                        src={item.imageUrl}
+                        alt={item.name}
+                        className="w-full h-48 object-cover hover:scale-110 transition-transform duration-300"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.parentNode.style.display = 'none';
+                        }}
+                      />
                     </div>
                   )}
                   
-                  <h3 className="text-xl font-semibold mb-2">{item.name}</h3>
-                  <p className="text-gray-600 mb-4">{item.description}</p>
+                  {/* Content Section */}
+                  <div className="p-6">
+                    {!item.imageUrl && (
+                      <div className="w-full h-32 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg mb-4 flex items-center justify-center">
+                        <span className="text-blue-600 text-sm font-medium">🍽️ Delicious Meal</span>
+                      </div>
+                    )}
+                    
+                    <h3 className="text-xl font-semibold mb-2">{item.name}</h3>
+                    <p className="text-gray-600 mb-4">{item.description}</p>
 
-                  <div className="flex justify-between items-center mb-4">
-                    <div className="text-sm text-gray-500">
-                      {item.calories && <span className="mr-4">{item.calories} cal</span>}
-                      {item.protein && <span>{item.protein} protein</span>}
+                    {/* Flavor Options */}
+                    {item.flavorOptions && item.flavorOptions.length > 0 && (
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Choose Flavor:
+                        </label>
+                        <select 
+                          className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          value={currentOptions.selectedFlavor?.name || ''}
+                          onChange={(e) => {
+                            const flavor = item.flavorOptions.find(f => f.name === e.target.value);
+                            handleFlavorChange(item._id, flavor || null);
+                          }}
+                        >
+                          <option value="">Select flavor...</option>
+                          {item.flavorOptions.map(flavor => (
+                            <option key={flavor.name} value={flavor.name}>
+                              {flavor.name} {flavor.price > 0 && `(+$${flavor.price.toFixed(2)})`}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {/* Add-on Options */}
+                    {item.addonOptions && item.addonOptions.length > 0 && (
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Add-ons:
+                        </label>
+                        <div className="space-y-2 max-h-32 overflow-y-auto">
+                          {item.addonOptions.map(addon => (
+                            <label key={addon.name} className="flex items-center">
+                              <input
+                                type="checkbox"
+                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                checked={(currentOptions.selectedAddons || []).some(a => a.name === addon.name)}
+                                onChange={(e) => handleAddonChange(item._id, addon, e.target.checked)}
+                              />
+                              <span className="ml-2 text-sm">
+                                {addon.name} (+${addon.price.toFixed(2)})
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex justify-between items-center mb-4">
+                      <div className="text-sm text-gray-500">
+                        {item.calories && <span className="mr-4">{item.calories} cal</span>}
+                        {item.protein && <span>{item.protein} protein</span>}
+                      </div>
+                      <div className="text-right">
+                        <span className="text-2xl font-bold text-blue-600">
+                          ${itemPrice.toFixed(2)}
+                        </span>
+                        {itemPrice !== parseFloat(item.price) && (
+                          <div className="text-sm text-gray-500">
+                            Base: ${parseFloat(item.price).toFixed(2)}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <span className="text-2xl font-bold text-blue-600">
-                      ${parseFloat(item.price).toFixed(2)}
-                    </span>
-                  </div>
 
-                  <button
-                    onClick={() => handleAddToCart({
-                      id: item._id,
-                      name: item.name,
-                      price: parseFloat(item.price),
-                      description: item.description,
-                      category: item.category,
-                      calories: item.calories,
-                      protein: item.protein,
-                      imageUrl: item.imageUrl
-                    })}
-                    className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-300"
-                  >
-                    Add to Cart
-                  </button>
+                    <button
+                      onClick={() => handleAddToCartWithOptions(item)}
+                      className={`w-full py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 active:scale-95 ${
+                        cartCount > 0
+                          ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg'
+                          : 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow-lg'
+                      }`}
+                    >
+                      {cartCount > 0 
+                        ? `Add to Cart (${cartCount} in cart)` 
+                        : 'Add to Cart'
+                      }
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
