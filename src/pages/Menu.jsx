@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 const API_BASE_URL = 'https://defiant-meals-backend.onrender.com';
 
-const Menu = ({ handleAddToCart, cartItems = [] }) => {
+const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeFromCart }) => {
   const [menuItems, setMenuItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All Items');
@@ -14,6 +14,23 @@ const Menu = ({ handleAddToCart, cartItems = [] }) => {
   const getItemCartCount = (itemId) => {
     const cartItem = cartItems.find(item => item.id === itemId);
     return cartItem ? cartItem.quantity : 0;
+  };
+
+  // Handle quantity changes
+  const handleQuantityChange = (item, change) => {
+    const cartCount = getItemCartCount(item._id);
+    const newQuantity = cartCount + change;
+    
+    if (newQuantity <= 0) {
+      // Remove from cart if quantity becomes 0 or less
+      removeFromCart(item._id);
+    } else if (cartCount === 0) {
+      // Add new item to cart
+      handleAddToCartWithOptions(item);
+    } else {
+      // Update existing item quantity
+      updateCartItemQuantity(item._id, newQuantity);
+    }
   };
 
   // Handle flavor selection (single select)
@@ -298,21 +315,42 @@ const Menu = ({ handleAddToCart, cartItems = [] }) => {
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => handleAddToCartWithOptions(item)}
-                      className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 active:scale-95 flex justify-between items-center ${
-                        cartCount > 0
-                          ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg'
-                          : 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow-lg'
-                      }`}
-                    >
-                      <span>Add to Cart</span>
-                      {cartCount > 0 && (
-                        <span className="bg-white text-blue-600 rounded-full px-2 py-1 text-sm font-bold min-w-[24px] h-6 flex items-center justify-center">
-                          {cartCount}
-                        </span>
+                    {/* Add to Cart Button with Quantity Controls */}
+                    <div className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-300 ${
+                      cartCount > 0
+                        ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg'
+                        : 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow-lg'
+                    }`}>
+                      {cartCount === 0 ? (
+                        <button
+                          onClick={() => handleAddToCartWithOptions(item)}
+                          className="w-full text-center"
+                        >
+                          Add to Cart
+                        </button>
+                      ) : (
+                        <div className="flex justify-between items-center">
+                          <span>Add to Cart</span>
+                          <div className="flex items-center space-x-3 bg-white rounded-full px-3 py-1">
+                            <button
+                              onClick={() => handleQuantityChange(item, -1)}
+                              className="w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-700 font-bold"
+                            >
+                              -
+                            </button>
+                            <span className="text-blue-600 font-bold min-w-[20px] text-center">
+                              {cartCount}
+                            </span>
+                            <button
+                              onClick={() => handleQuantityChange(item, 1)}
+                              className="w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-700 font-bold"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
                       )}
-                    </button>
+                    </div>
                   </div>
                 </div>
               );
