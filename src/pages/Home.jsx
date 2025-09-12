@@ -18,12 +18,6 @@ const Home = ({ setCurrentPage }) => {
             >
               View Menu
             </button>
-            <button 
-              onClick={() => setCurrentPage('order')}
-              className="bg-transparent border-2 border-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition duration-300"
-            >
-              Start Ordering
-            </button>
           </div>
         </div>
       </section>
