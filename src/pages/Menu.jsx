@@ -300,16 +300,18 @@ const Menu = ({ handleAddToCart, cartItems = [] }) => {
 
                     <button
                       onClick={() => handleAddToCartWithOptions(item)}
-                      className={`w-full py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 active:scale-95 ${
+                      className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 active:scale-95 flex justify-between items-center ${
                         cartCount > 0
                           ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg'
                           : 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow-lg'
                       }`}
                     >
-                      {cartCount > 0 
-                        ? `Add to Cart (${cartCount} in cart)` 
-                        : 'Add to Cart'
-                      }
+                      <span>Add to Cart</span>
+                      {cartCount > 0 && (
+                        <span className="bg-white text-blue-600 rounded-full px-2 py-1 text-sm font-bold min-w-[24px] h-6 flex items-center justify-center">
+                          {cartCount}
+                        </span>
+                      )}
                     </button>
                   </div>
                 </div>
