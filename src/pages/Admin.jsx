@@ -1,9 +1,3 @@
-
-
-
-
-
-
 import React, { useState, useEffect } from 'react';
 
 const API_BASE_URL = 'https://defiant-meals-backend.onrender.com';
@@ -28,6 +22,16 @@ const AdminDashboard = () => {
     pendingOrders: 0,
     completedOrders: 0,
     totalRevenue: 0
+  });
+
+  // Calendar Order Summary state
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [filterType, setFilterType] = useState('order'); // 'order' or 'pickup'
+  const [calendarSummary, setCalendarSummary] = useState({
+    totalOrders: 0,
+    totalRevenue: 0,
+    averageOrderValue: 0
   });
 
   // Menu state
@@ -76,6 +80,120 @@ const AdminDashboard = () => {
     'Healthier Options',
     'Snacks'
   ];
+
+  // Initialize calendar dates with last 7 days
+  useEffect(() => {
+    if (activeTab === 'summary') {
+      const today = new Date();
+      const sevenDaysAgo = new Date(today);
+      sevenDaysAgo.setDate(today.getDate() - 7);
+      
+      setStartDate(sevenDaysAgo.toISOString().split('T')[0]);
+      setEndDate(today.toISOString().split('T')[0]);
+      generateCalendarSummary(sevenDaysAgo.toISOString().split('T')[0], today.toISOString().split('T')[0], 'order');
+    }
+  }, [activeTab]);
+
+  // Calendar Summary functions
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
+
+  const handleQuickSelect = (days) => {
+    const today = new Date();
+    let startDateStr, endDateStr;
+    
+    if (filterType === 'pickup') {
+      // For pickup dates, we might want to look at future dates
+      if (days === 0) {
+        // Today only
+        startDateStr = endDateStr = today.toISOString().split('T')[0];
+      } else {
+        // Future range (days from today)
+        startDateStr = today.toISOString().split('T')[0];
+        const futureDate = new Date(today);
+        futureDate.setDate(today.getDate() + days);
+        endDateStr = futureDate.toISOString().split('T')[0];
+      }
+    } else {
+      // For order dates, look at past dates
+      if (days === 0) {
+        // Today only
+        startDateStr = endDateStr = today.toISOString().split('T')[0];
+      } else {
+        // Past range (days ago to today)
+        const pastDate = new Date(today);
+        pastDate.setDate(today.getDate() - days);
+        startDateStr = pastDate.toISOString().split('T')[0];
+        endDateStr = today.toISOString().split('T')[0];
+      }
+    }
+    
+    setStartDate(startDateStr);
+    setEndDate(endDateStr);
+    generateCalendarSummary(startDateStr, endDateStr, filterType);
+  };
+
+  const generateCalendarSummary = async (start, end, type) => {
+    if (!start || !end) return;
+    
+    setSummaryLoading(true);
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/orders/summary?startDate=${start}&endDate=${end}&type=${type}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setCalendarSummary({
+          totalOrders: data.totalOrders || 0,
+          totalRevenue: data.totalRevenue || 0,
+          averageOrderValue: data.averageOrderValue || 0
+        });
+      } else {
+        console.error('Failed to fetch summary data');
+        setCalendarSummary({
+          totalOrders: 0,
+          totalRevenue: 0,
+          averageOrderValue: 0
+        });
+      }
+      
+    } catch (error) {
+      console.error('Error fetching order summary:', error);
+      setCalendarSummary({
+        totalOrders: 0,
+        totalRevenue: 0,
+        averageOrderValue: 0
+      });
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+
+  const handleStartDateChange = (date) => {
+    setStartDate(date);
+    if (endDate && date <= endDate) {
+      generateCalendarSummary(date, endDate, filterType);
+    }
+  };
+
+  const handleEndDateChange = (date) => {
+    setEndDate(date);
+    if (startDate && date >= startDate) {
+      generateCalendarSummary(startDate, date, filterType);
+    }
+  };
+
+  const handleFilterTypeChange = (type) => {
+    setFilterType(type);
+    if (startDate && endDate) {
+      generateCalendarSummary(startDate, endDate, type);
+    }
+  };
 
   // Audio notification function
   const playNewOrderSound = () => {
@@ -578,16 +696,6 @@ const AdminDashboard = () => {
       case 'completed': return 'bg-gray-100 text-gray-800 border-gray-200';
       case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  const getStatusBadgeColor = (status) => {
-    switch (status) {
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'confirmed': return 'bg-blue-100 text-blue-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -1551,92 +1659,178 @@ const AdminDashboard = () => {
         {/* Order Summary Tab */}
         {activeTab === 'summary' && (
           <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">Order Summary Generator</h2>
-              
-              <div className="flex items-center space-x-4 mb-6">
-                <label htmlFor="summaryDays" className="text-sm font-medium text-gray-700">
-                  Generate summary for last:
-                </label>
-                <select
-                  id="summaryDays"
-                  value={summaryDays}
-                  onChange={(e) => setSummaryDays(parseInt(e.target.value))}
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value={1}>1 day</option>
-                  <option value={3}>3 days</option>
-                  <option value={7}>7 days</option>
-                  <option value={14}>14 days</option>
-                  <option value={30}>30 days</option>
-                </select>
-                <button
-                  onClick={generateOrderSummary}
-                  disabled={summaryLoading}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
-                >
-                  {summaryLoading ? 'Generating...' : 'Generate Summary'}
-                </button>
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">Order Summary Generator</h2>
+            </div>
+            
+            {/* Date Range Selection */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+                
+                {/* Filter Type */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Filter By
+                  </label>
+                  <select
+                    value={filterType}
+                    onChange={(e) => handleFilterTypeChange(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="order">Order Date</option>
+                    <option value="pickup">Pickup Date</option>
+                  </select>
+                </div>
+
+                {/* Start Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Start Date
+                  </label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => handleStartDateChange(e.target.value)}
+                    max={endDate || undefined}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* End Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    End Date
+                  </label>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => handleEndDateChange(e.target.value)}
+                    min={startDate || undefined}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Generate Button */}
+                <div className="flex items-end">
+                  <button
+                    onClick={() => generateCalendarSummary(startDate, endDate, filterType)}
+                    disabled={!startDate || !endDate || summaryLoading}
+                    className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {summaryLoading ? 'Generating...' : 'Generate Summary'}
+                  </button>
+                </div>
               </div>
 
-              {orderSummary && (
-                <div className="border-t pt-6">
-                  <h3 className="text-lg font-semibold mb-4">
-                    Summary for {orderSummary.dateRange.start} - {orderSummary.dateRange.end}
-                  </h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div className="bg-blue-50 rounded-lg p-4">
-                      <p className="text-sm text-blue-600 font-medium">Total Orders</p>
-                      <p className="text-2xl font-bold text-blue-900">{orderSummary.totalOrders}</p>
-                    </div>
-                    <div className="bg-green-50 rounded-lg p-4">
-                      <p className="text-sm text-green-600 font-medium">Total Revenue</p>
-                      <p className="text-2xl font-bold text-green-900">${orderSummary.totalRevenue.toFixed(2)}</p>
-                    </div>
-                    <div className="bg-purple-50 rounded-lg p-4">
-                      <p className="text-sm text-purple-600 font-medium">Unique Items</p>
-                      <p className="text-2xl font-bold text-purple-900">{orderSummary.items.length}</p>
-                    </div>
-                  </div>
+              {/* Quick Select Buttons */}
+              <div className="mt-6 pt-6 border-t">
+                <div className="flex flex-wrap gap-3">
+                  <span className="text-sm font-medium text-gray-700 self-center mr-2">Quick Select:</span>
+                  {(filterType === 'pickup' ? [
+                    { days: 0, label: 'Today' },
+                    { days: -1, label: 'Tomorrow' },
+                    { days: -7, label: 'Next 7 Days' },
+                    { days: -14, label: 'Next 14 Days' },
+                    { days: -30, label: 'Next 30 Days' }
+                  ] : [
+                    { days: 0, label: 'Today' },
+                    { days: 1, label: 'Yesterday' },
+                    { days: 7, label: 'Last 7 Days' },
+                    { days: 14, label: 'Last 14 Days' },
+                    { days: 30, label: 'Last 30 Days' },
+                    { days: 90, label: 'Last 3 Months' }
+                  ]).map(option => (
+                    <button
+                      key={option.days}
+                      onClick={() => handleQuickSelect(Math.abs(option.days))}
+                      className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors"
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-                  <h4 className="text-md font-semibold mb-4">Items to Prepare</h4>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Item</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Revenue</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Popular Add-ons</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {orderSummary.items.map((item, index) => (
-                          <tr key={index}>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm font-medium text-gray-900">{item.name}</div>
-                              {item.flavor && (
-                                <div className="text-sm text-blue-600">Flavor: {item.flavor}</div>
-                              )}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-600">
-                              {item.quantity}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              ${item.totalRevenue.toFixed(2)}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-500">
-                              {item.addons.length > 0 ? item.addons.join(', ') : 'None'}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+              {/* Selected Range Display */}
+              {startDate && endDate && (
+                <div className="mt-4 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-medium text-blue-800">Selected Date Range:</div>
+                      <div className="text-blue-700">
+                        {formatDate(startDate)} - {formatDate(endDate)}
+                        <span className="ml-2 text-sm">({filterType === 'order' ? 'Order Dates' : 'Pickup Dates'})</span>
+                      </div>
+                    </div>
+                    <div className="text-sm text-blue-600">
+                      {Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)) + 1} days
+                    </div>
                   </div>
                 </div>
               )}
             </div>
+
+            {/* Summary Results */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-xl font-semibold mb-6 flex items-center">
+                Summary Results
+              </h3>
+              
+              {summaryLoading ? (
+                <div className="text-center py-12">
+                  <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"></div>
+                  <p className="text-gray-500">Generating summary...</p>
+                </div>
+              ) : startDate && endDate ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border border-green-200">
+                    <div className="text-3xl font-bold text-green-700 mb-2">{calendarSummary.totalOrders}</div>
+                    <div className="text-sm font-medium text-green-600">Total Orders</div>
+                    <div className="text-xs text-green-500 mt-1">
+                      {filterType === 'order' ? 'Orders placed' : 'Orders for pickup'}
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200">
+                    <div className="text-3xl font-bold text-blue-700 mb-2">${calendarSummary.totalRevenue.toFixed(2)}</div>
+                    <div className="text-sm font-medium text-blue-600">Total Revenue</div>
+                    <div className="text-xs text-blue-500 mt-1">
+                      Gross sales for period
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl border border-purple-200">
+                    <div className="text-3xl font-bold text-purple-700 mb-2">${calendarSummary.averageOrderValue.toFixed(2)}</div>
+                    <div className="text-sm font-medium text-purple-600">Average Order Value</div>
+                    <div className="text-xs text-purple-500 mt-1">
+                      Revenue ÷ Total Orders
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  <p>Select a date range to generate summary</p>
+                </div>
+              )}
+            </div>
+
+            {/* Additional Actions */}
+            {startDate && endDate && !summaryLoading && (
+              <div className="bg-white rounded-lg shadow p-6">
+                <h4 className="font-semibold mb-4">Export Options</h4>
+                <div className="flex flex-wrap gap-3">
+                  <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                    Export to CSV
+                  </button>
+                  <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    Export to PDF
+                  </button>
+                  <button className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+                    View Detailed Report
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
