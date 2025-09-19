@@ -58,10 +58,15 @@ const App = () => {
 
   const renderPage = () => {
     switch(currentPage) {
-      case 'home':
-        return <Home setCurrentPage={setCurrentPage} />;
+        case 'home':
+          return <Home setCurrentPage={setCurrentPage} />;
       case 'menu':
-        return <Menu handleAddToCart={handleAddToCart} />;
+    return <Menu 
+      handleAddToCart={handleAddToCart}
+      cartItems={cartItems}
+      updateCartItemQuantity={handleUpdateQuantity}
+      removeFromCart={handleRemoveFromCart}
+    />;
       case 'order':
         return <Order 
           cartItems={cartItems}

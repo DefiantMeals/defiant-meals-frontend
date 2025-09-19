@@ -10,26 +10,31 @@ const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeF
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [selectedItemOptions, setSelectedItemOptions] = useState({});
 
-  // Get count of specific item in cart
+  // Get count of specific item in cart - use parent cart state
   const getItemCartCount = (itemId) => {
-    const cartItem = cartItems.find(item => item.id === itemId);
-    return cartItem ? cartItem.quantity : 0;
+    const cartItem = cartItems.find(item => item.originalId === itemId || item.id === itemId);
+    return cartItem ? cartItem.quantity || 1 : 0;
   };
 
-  // Handle quantity changes
+  // Handle quantity changes - update parent cart state
   const handleQuantityChange = (item, change) => {
-    const cartCount = getItemCartCount(item._id);
-    const newQuantity = cartCount + change;
+    const currentCount = getItemCartCount(item._id);
+    const newCount = currentCount + change;
     
-    if (newQuantity <= 0) {
-      // Remove from cart if quantity becomes 0 or less
-      removeFromCart(item._id);
-    } else if (cartCount === 0) {
-      // Add new item to cart
+    if (newCount <= 0) {
+      // Find the cart item to remove
+      const cartItem = cartItems.find(cartItem => cartItem.originalId === item._id || cartItem.id === item._id);
+      if (cartItem) {
+        removeFromCart(cartItem.id || cartItem.originalId);
+      }
+    } else if (currentCount === 0) {
       handleAddToCartWithOptions(item);
     } else {
-      // Update existing item quantity
-      updateCartItemQuantity(item._id, newQuantity);
+      // Find the cart item to update
+      const cartItem = cartItems.find(cartItem => cartItem.originalId === item._id || cartItem.id === item._id);
+      if (cartItem) {
+        updateCartItemQuantity(cartItem.id || cartItem.originalId, newCount);
+      }
     }
   };
 
@@ -101,6 +106,7 @@ const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeF
       imageUrl: item.imageUrl,
       selectedFlavor: options.selectedFlavor || null,
       selectedAddons: options.selectedAddons || [],
+      quantity: 1,
       customizations: {
         flavor: options.selectedFlavor?.name || null,
         addons: (options.selectedAddons || []).map(a => a.name)
@@ -315,41 +321,31 @@ const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeF
                       </div>
                     </div>
 
-                    {/* Add to Cart Button with Quantity Controls */}
-                    <div className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-300 ${
-                      cartCount > 0
-                        ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg'
-                        : 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow-lg'
-                    }`}>
-                      {cartCount === 0 ? (
+                    {/* Add to Cart Button with Always Visible Quantity Controls */}
+                    <div className="flex items-center justify-between bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-semibold transition-all duration-300 active:scale-95 transform">
+                      <span>Add to Cart</span>
+                      <div className="flex items-center space-x-2 bg-white rounded-full px-2 py-1">
                         <button
-                          onClick={() => handleAddToCartWithOptions(item)}
-                          className="w-full text-center"
+                          onClick={() => handleQuantityChange(item, -1)}
+                          className={`w-6 h-6 rounded-full flex items-center justify-center text-white font-bold text-sm transition-all active:scale-90 ${
+                            cartCount === 0 
+                              ? 'bg-gray-400 cursor-not-allowed' 
+                              : 'bg-red-500 hover:bg-red-600'
+                          }`}
+                          disabled={cartCount === 0}
                         >
-                          Add to Cart
+                          -
                         </button>
-                      ) : (
-                        <div className="flex justify-between items-center">
-                          <span>Add to Cart</span>
-                          <div className="flex items-center space-x-3 bg-white rounded-full px-3 py-1">
-                            <button
-                              onClick={() => handleQuantityChange(item, -1)}
-                              className="w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-700 font-bold"
-                            >
-                              -
-                            </button>
-                            <span className="text-blue-600 font-bold min-w-[20px] text-center">
-                              {cartCount}
-                            </span>
-                            <button
-                              onClick={() => handleQuantityChange(item, 1)}
-                              className="w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-700 font-bold"
-                            >
-                              +
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                        <span className="text-gray-800 font-bold min-w-[16px] text-center text-sm">
+                          {cartCount}
+                        </span>
+                        <button
+                          onClick={() => handleQuantityChange(item, 1)}
+                          className="w-6 h-6 rounded-full bg-green-500 hover:bg-green-600 flex items-center justify-center text-white font-bold text-sm transition-all active:scale-90"
+                        >
+                          +
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -65,8 +65,8 @@ const Contact = () => {
                 <div>
                   <h3 className="font-semibold text-gray-900">Address</h3>
                   <p className="text-gray-600">
-                    123 Food Street<br />
-                    Meal City, MC 12345<br />
+                    1904 Elm St<br />
+                    Eudora, KS 66025<br />
                     United States
                   </p>
                 </div>
@@ -82,7 +82,7 @@ const Contact = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900">Phone</h3>
-                  <p className="text-gray-600">(555) 123-4567</p>
+                  <p className="text-gray-600">(912) 585-5126</p>
                 </div>
               </div>
 
@@ -111,9 +111,9 @@ const Contact = () => {
                 <div>
                   <h3 className="font-semibold text-gray-900">Business Hours</h3>
                   <div className="text-gray-600">
-                    <p>Monday - Friday: 8:00 AM - 6:00 PM</p>
-                    <p>Saturday: 9:00 AM - 5:00 PM</p>
-                    <p>Sunday: 10:00 AM - 4:00 PM</p>
+                    <p>Online Ordering: 24/7</p>
+                    <p>Monday Pickup Times: 7-11am and 3-6pm </p>
+                    <p>Saturday Pickup Times: 8am-12pm</p>
                   </div>
                 </div>
               </div>
