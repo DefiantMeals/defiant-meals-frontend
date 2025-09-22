@@ -62,9 +62,42 @@ const Footer = ({ setCurrentPage }) => {
           <div>
             <h4 className="text-lg font-semibold mb-4">Follow Us</h4>
             <div className="flex space-x-4">
-              <a href="#" className="text-gray-300 hover:text-white transition duration-300">Facebook</a>
-              <a href="#" className="text-gray-300 hover:text-white transition duration-300">Instagram</a>
-              <a href="#" className="text-gray-300 hover:text-white transition duration-300">Twitter</a>
+              <a 
+                href="https://facebook.com/defiantmeals" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hover:opacity-80 transition duration-300"
+              >
+                <img 
+                  src="/FB.png" 
+                  alt="Facebook" 
+                  className="w-8 h-8 rounded"
+                />
+              </a>
+              <a 
+                href="https://instagram.com/defiantmeals" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hover:opacity-80 transition duration-300"
+              >
+                <img 
+                  src="/IG.jpg" 
+                  alt="Instagram" 
+                  className="w-8 h-8 rounded"
+                />
+              </a>
+              <a 
+                href="https://twitter.com/defiantmeals" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hover:opacity-80 transition duration-300"
+              >
+                <img 
+                  src="/X.png" 
+                  alt="Twitter/X" 
+                  className="w-8 h-8 rounded"
+                />
+              </a>
             </div>
           </div>
         </div>
