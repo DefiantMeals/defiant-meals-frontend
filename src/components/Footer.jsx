@@ -33,7 +33,7 @@ const Footer = ({ setCurrentPage }) => {
               </li>
               <li>
                 <button 
-                  onClick={() => setCurrentPage('order')}
+                  onClick={() => setCurrentPage('My Basket')}
                   className="text-gray-300 hover:text-white transition duration-300"
                 >
                   Order

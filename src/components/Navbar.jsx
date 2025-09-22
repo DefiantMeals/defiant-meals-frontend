@@ -10,7 +10,7 @@ const Navbar = ({ setCurrentPage, currentPage }) => {
   const navItems = [
     { id: 'home', name: 'Home' },
     { id: 'menu', name: 'Menu' },
-    { id: 'order', name: 'Order' },
+    { id: 'order', name: 'My Basket' },
     
     { id: 'contact', name: 'Contact' }
   ];
