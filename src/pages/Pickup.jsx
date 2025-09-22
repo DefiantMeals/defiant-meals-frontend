@@ -161,8 +161,8 @@ const Pickup = ({ orderData, setCurrentPage, setOrderData }) => {
   // Single location information
   const location = {
     name: 'Defiant Meals',
-    address: '123 Main Street, Phnom Penh',
-    phone: '(855) 123-4567',
+    address: '1904 Elm St, Eudora KS 66025',
+    phone: ' 913 585 5126',
     hours: getLocationHours()
   };
 
@@ -371,7 +371,7 @@ const Pickup = ({ orderData, setCurrentPage, setOrderData }) => {
                     <ul className="text-sm text-gray-700 space-y-1">
                       <li>• Valid ID for verification</li>
                       <li>• Order confirmation number</li>
-                      <li>• Payment method (if not prepaid)</li>
+                      <li>• A healthy appetite!</li>
                     </ul>
                   </div>
                   <div>
