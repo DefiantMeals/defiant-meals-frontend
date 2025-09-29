@@ -127,8 +127,8 @@ const Contact = () => {
                   <p className="text-sm text-gray-600">You will receive a tracking link via email once your order is confirmed. You can also check your order status in your account.</p>
                 </div>
                 <div>
-                  <h4 className="font-medium text-gray-800">What are your delivery hours?</h4>
-                  <p className="text-sm text-gray-600">We currently deliver within a 15-mile radius of our location. Orders held for 2 hours maximum. Call ahead if you are running late.</p>
+                  <h4 className="font-medium text-gray-800">Have a great day!</h4>
+                  <p className="text-sm text-gray-600"></p>
                 </div>
               </div>
             </div>
