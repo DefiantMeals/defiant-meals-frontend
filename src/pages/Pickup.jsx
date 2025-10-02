@@ -5,6 +5,30 @@ const Pickup = ({ orderData, setCurrentPage, setOrderData }) => {
   const [selectedDate, setSelectedDate] = useState('');
   const [availableDates, setAvailableDates] = useState([]);
   const [orderingDeadline, setOrderingDeadline] = useState(null);
+  const [schedule, setSchedule] = useState(null);
+  const [availableTimeSlots, setAvailableTimeSlots] = useState([]);
+  const [scheduleLoading, setScheduleLoading] = useState(true);
+
+  // Fetch schedule from backend
+  useEffect(() => {
+    const fetchSchedule = async () => {
+      try {
+        const response = await fetch('https://defiant-meals-backend.onrender.com/api/schedule');
+        if (response.ok) {
+          const data = await response.json();
+          setSchedule(data);
+        } else {
+          console.error('Failed to fetch schedule');
+        }
+      } catch (error) {
+        console.error('Error fetching schedule:', error);
+      } finally {
+        setScheduleLoading(false);
+      }
+    };
+
+    fetchSchedule();
+  }, []);
 
   // Generate available pickup dates (Saturdays and Mondays, 8+ days away)
   useEffect(() => {
@@ -33,7 +57,7 @@ const Pickup = ({ orderData, setCurrentPage, setOrderData }) => {
               day: 'numeric',
               year: 'numeric'
             }),
-            dayName: checkDate.toLocaleDateString('en-US', { weekday: 'long' })
+            dayName: checkDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase()
           });
         }
       }
@@ -43,6 +67,65 @@ const Pickup = ({ orderData, setCurrentPage, setOrderData }) => {
 
     generateAvailableDates();
   }, []);
+
+  // Generate time slots based on selected date and schedule
+  useEffect(() => {
+    if (!selectedDate || !schedule) {
+      setAvailableTimeSlots([]);
+      return;
+    }
+
+    const selectedDateObj = availableDates.find(d => d.date === selectedDate);
+    if (!selectedDateObj) return;
+
+    const dayName = selectedDateObj.dayName;
+    const daySchedule = schedule[dayName];
+
+    if (!daySchedule || !daySchedule.open) {
+      setAvailableTimeSlots([]);
+      return;
+    }
+
+    const slots = [];
+
+    // Helper function to generate slots between start and end time
+    const generateSlots = (startTime, endTime) => {
+      const start = new Date(`2000-01-01T${startTime}`);
+      const end = new Date(`2000-01-01T${endTime}`);
+      const current = new Date(start);
+
+      const tempSlots = [];
+      while (current < end) {
+        tempSlots.push(current.toLocaleTimeString('en-US', { 
+          hour: '2-digit', 
+          minute: '2-digit',
+          hour12: true 
+        }));
+        current.setMinutes(current.getMinutes() + 30);
+      }
+      return tempSlots;
+    };
+
+    // Generate morning slots
+    if (daySchedule.morningStart && daySchedule.morningEnd) {
+      const morningSlots = generateSlots(daySchedule.morningStart, daySchedule.morningEnd);
+      slots.push(...morningSlots);
+    }
+
+    // Generate evening slots (if different from morning)
+    if (daySchedule.eveningStart && daySchedule.eveningEnd) {
+      const eveningSlots = generateSlots(daySchedule.eveningStart, daySchedule.eveningEnd);
+      // Only add evening slots if they're different from morning
+      eveningSlots.forEach(slot => {
+        if (!slots.includes(slot)) {
+          slots.push(slot);
+        }
+      });
+    }
+
+    setAvailableTimeSlots(slots);
+    setSelectedTime(''); // Reset time when date changes
+  }, [selectedDate, schedule, availableDates]);
 
   // Calculate ordering deadline when date is selected
   useEffect(() => {
@@ -56,25 +139,6 @@ const Pickup = ({ orderData, setCurrentPage, setOrderData }) => {
       setOrderingDeadline(null);
     }
   }, [selectedDate]);
-
-  // Fixed time slots for pickup
-  const timeSlots = [
-    '08:00 AM',
-    '08:30 AM',
-    '09:00 AM',
-    '09:30 AM',
-    '10:00 AM',
-    '10:30 AM',
-    '11:00 AM',
-    '11:30 AM',
-    '12:00 PM',
-    '12:30 PM',
-    '01:00 PM',
-    '01:30 PM',
-    '02:00 PM',
-    '02:30 PM',
-    '03:00 PM'
-  ];
 
   // If no order data, redirect back to menu
   if (!orderData) {
@@ -99,7 +163,7 @@ const Pickup = ({ orderData, setCurrentPage, setOrderData }) => {
     name: 'Defiant Meals',
     address: '1904 Elm St, Eudora KS 66025',
     phone: '913 585 5126',
-    hours: 'Mon: 07:00-18:00, Sat: 08:00-12:00'
+    hours: scheduleLoading ? 'Loading...' : 'Mon: 07:00-18:00, Sat: 08:00-12:00'
   };
 
   const continueToPayment = () => {
@@ -231,10 +295,7 @@ const Pickup = ({ orderData, setCurrentPage, setOrderData }) => {
                     </label>
                     <select
                       value={selectedDate}
-                      onChange={(e) => {
-                        setSelectedDate(e.target.value);
-                        setSelectedTime(''); // Reset time when date changes
-                      }}
+                      onChange={(e) => setSelectedDate(e.target.value)}
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
                     >
                       <option value="">Select a date...</option>
@@ -269,9 +330,17 @@ const Pickup = ({ orderData, setCurrentPage, setOrderData }) => {
                       <div className="flex items-center justify-center h-64 border border-gray-200 rounded-lg bg-gray-50">
                         <p className="text-gray-500">Please select a date first</p>
                       </div>
+                    ) : scheduleLoading ? (
+                      <div className="flex items-center justify-center h-64 border border-gray-200 rounded-lg bg-gray-50">
+                        <p className="text-gray-500">Loading available times...</p>
+                      </div>
+                    ) : availableTimeSlots.length === 0 ? (
+                      <div className="flex items-center justify-center h-64 border border-gray-200 rounded-lg bg-gray-50">
+                        <p className="text-gray-500">No pickup times available for this date</p>
+                      </div>
                     ) : (
                       <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-3">
-                        {timeSlots.map(time => (
+                        {availableTimeSlots.map(time => (
                           <button
                             key={time}
                             onClick={() => setSelectedTime(time)}

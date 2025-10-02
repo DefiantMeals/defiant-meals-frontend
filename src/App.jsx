@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -11,13 +11,41 @@ import Admin from './pages/Admin';
 
 const App = () => {
   const [currentPage, setCurrentPage] = useState('home');
-  const [cartItems, setCartItems] = useState([]);
-  const [orderData, setOrderData] = useState(null);
-  const [customerInfo, setCustomerInfo] = useState({
-    name: '',
-    email: '',
-    phone: ''
+  
+  // Initialize state from sessionStorage or defaults
+  const [cartItems, setCartItems] = useState(() => {
+    const saved = sessionStorage.getItem('cartItems');
+    return saved ? JSON.parse(saved) : [];
   });
+  
+  const [orderData, setOrderData] = useState(() => {
+    const saved = sessionStorage.getItem('orderData');
+    return saved ? JSON.parse(saved) : null;
+  });
+  
+  const [customerInfo, setCustomerInfo] = useState(() => {
+    const saved = sessionStorage.getItem('customerInfo');
+    return saved ? JSON.parse(saved) : { name: '', email: '', phone: '' };
+  });
+
+  // Save cartItems to sessionStorage whenever it changes
+  useEffect(() => {
+    sessionStorage.setItem('cartItems', JSON.stringify(cartItems));
+  }, [cartItems]);
+
+  // Save orderData to sessionStorage whenever it changes
+  useEffect(() => {
+    if (orderData) {
+      sessionStorage.setItem('orderData', JSON.stringify(orderData));
+    } else {
+      sessionStorage.removeItem('orderData');
+    }
+  }, [orderData]);
+
+  // Save customerInfo to sessionStorage whenever it changes
+  useEffect(() => {
+    sessionStorage.setItem('customerInfo', JSON.stringify(customerInfo));
+  }, [customerInfo]);
 
   const handleAddToCart = (item) => {
     setCartItems(prev => {
@@ -54,6 +82,10 @@ const App = () => {
     setOrderData(null);
     setCustomerInfo({ name: '', email: '', phone: '' });
     setCartItems([]);
+    // Clear sessionStorage
+    sessionStorage.removeItem('orderData');
+    sessionStorage.removeItem('customerInfo');
+    sessionStorage.removeItem('cartItems');
   };
 
   const renderPage = () => {
