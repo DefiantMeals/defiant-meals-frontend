@@ -305,35 +305,35 @@ const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeF
                     )}
 
                     {/* Nutritional Information */}
-                      <div className="mb-4 bg-gray-50 rounded-lg p-3 border border-gray-200">
-                        <div className="grid grid-cols-3 gap-2 text-center">
-                          {item.protein && (
-                            <div className="bg-white rounded-md p-2 shadow-sm">
-                              <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Protein</div>
-                              <div className="text-sm font-semibold text-blue-600">{item.protein}</div>
-                            </div>
-                          )}
-                          {item.fats && (
-                            <div className="bg-white rounded-md p-2 shadow-sm">
-                              <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Fats</div>
-                              <div className="text-sm font-semibold text-orange-600">{item.fats}</div>
-                            </div>
-                          )}
-                          {item.carbs && (
-                            <div className="bg-white rounded-md p-2 shadow-sm">
-                              <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Carbs</div>
-                              <div className="text-sm font-semibold text-green-600">{item.carbs}</div>
-                            </div>
-                          )}
-                        </div>
-                        {item.calories && (
-                          <div className="text-center mt-2 text-sm text-gray-600">
-                            {item.calories} calories
+                    <div className="mb-4 bg-gray-50 rounded-lg p-3 border border-gray-200">
+                      <div className="grid grid-cols-3 gap-2 text-center">
+                        {item.protein && (
+                          <div className="bg-white rounded-md p-2 shadow-sm">
+                            <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Protein</div>
+                            <div className="text-sm font-semibold text-blue-600">{item.protein}</div>
+                          </div>
+                        )}
+                        {item.fats && (
+                          <div className="bg-white rounded-md p-2 shadow-sm">
+                            <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Fats</div>
+                            <div className="text-sm font-semibold text-orange-600">{item.fats}</div>
+                          </div>
+                        )}
+                        {item.carbs && (
+                          <div className="bg-white rounded-md p-2 shadow-sm">
+                            <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Carbs</div>
+                            <div className="text-sm font-semibold text-green-600">{item.carbs}</div>
                           </div>
                         )}
                       </div>
+                      {item.calories && (
+                        <div className="text-center mt-2 text-sm text-gray-600">
+                          {item.calories} calories
+                        </div>
+                      )}
+                    </div>
 
-                      <div className="flex justify-between items-center mb-4">
+                    <div className="flex justify-end items-center mb-4">
                       <div className="text-right">
                         <span className="text-2xl font-bold text-blue-600">
                           ${itemPrice.toFixed(2)}
