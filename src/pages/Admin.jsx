@@ -1195,6 +1195,29 @@ const AdminDashboard = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Fats</label>
+                    <input
+                      type="text"
+                      name="fats"
+                      value={formData.fats}
+                      onChange={handleInputChange}
+                      placeholder="e.g., 12g"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Carbs</label>
+                    <input
+                      type="text"
+                      name="carbs"
+                      value={formData.carbs}
+                      onChange={handleInputChange}
+                      placeholder="e.g., 45g"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
                   
                   <div className="md:col-span-2">
                     <label className="flex items-center space-x-2">
