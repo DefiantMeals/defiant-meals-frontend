@@ -44,6 +44,8 @@ const AdminDashboard = () => {
     description: '',
     price: '',
     category: 'High Protein',
+    fats: '',
+    carbs: '',
     calories: '',
     protein: '',
     available: true,
@@ -448,6 +450,8 @@ const AdminDashboard = () => {
       category: 'High Protein',
       calories: '',
       protein: '',
+      fats: '',
+      carbs: '',
       available: true,
       imageUrl: ''
     });
@@ -462,6 +466,8 @@ const AdminDashboard = () => {
       category: item.category,
       calories: item.calories || '',
       protein: item.protein || '',
+      fats: item.fats || '',
+      carbs: item.carbs || '',
       available: item.available,
       imageUrl: item.imageUrl || ''
     });
@@ -1269,12 +1275,12 @@ const AdminDashboard = () => {
                     <p className="text-sm text-gray-500 mb-4">{item.category}</p>
                     
                     {(item.calories || item.protein) && (
-                      <div className="text-xs text-gray-500 mb-4">
-                        {item.calories && <span>{item.calories} cal</span>}
-                        {item.calories && item.protein && <span> • </span>}
-                        {item.protein && <span>{item.protein} protein</span>}
-                      </div>
-                    )}
+                        <div className="text-xs text-gray-500 mb-4">
+                          {item.calories && <span>{item.calories} cal</span>}
+                          {item.calories && item.protein && <span> • </span>}
+                          {item.protein && <span>{item.protein} protein</span>}
+                        </div>
+                      )}
                     
                     <div className="flex space-x-2">
                       <button
