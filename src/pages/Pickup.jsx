@@ -4,7 +4,7 @@ const Pickup = ({ orderData, setCurrentPage, setOrderData }) => {
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [availableDates, setAvailableDates] = useState([]);
-  const [orderingDeadline, setOrderingDeadline] = useState(null);
+  const [dateValidation, setDateValidation] = useState(null);
   const [schedule, setSchedule] = useState(null);
   const [availableTimeSlots, setAvailableTimeSlots] = useState([]);
   const [scheduleLoading, setScheduleLoading] = useState(true);
@@ -68,6 +68,36 @@ const Pickup = ({ orderData, setCurrentPage, setOrderData }) => {
     generateAvailableDates();
   }, []);
 
+  // Validate pickup date with backend when date is selected
+  useEffect(() => {
+    if (selectedDate) {
+      validatePickupDate(selectedDate);
+    } else {
+      setDateValidation(null);
+    }
+  }, [selectedDate]);
+
+  // Validate pickup date against backend
+  const validatePickupDate = async (date) => {
+    try {
+      const response = await fetch(`https://defiant-meals-backend.onrender.com/api/orders/validate-pickup/${date}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setDateValidation(data);
+        
+        // If date is invalid, show alert and clear selection
+        if (!data.isValid) {
+          alert(data.message);
+          setSelectedDate('');
+          setDateValidation(null);
+        }
+      }
+    } catch (error) {
+      console.error('Error validating pickup date:', error);
+    }
+  };
+
   // Generate time slots based on selected date and schedule
   useEffect(() => {
     if (!selectedDate || !schedule) {
@@ -127,19 +157,6 @@ const Pickup = ({ orderData, setCurrentPage, setOrderData }) => {
     setSelectedTime(''); // Reset time when date changes
   }, [selectedDate, schedule, availableDates]);
 
-  // Calculate ordering deadline when date is selected
-  useEffect(() => {
-    if (selectedDate) {
-      const pickupDate = new Date(selectedDate);
-      const deadline = new Date(pickupDate);
-      deadline.setDate(pickupDate.getDate() - 8);
-      deadline.setHours(12, 0, 0, 0);
-      setOrderingDeadline(deadline);
-    } else {
-      setOrderingDeadline(null);
-    }
-  }, [selectedDate]);
-
   // If no order data, redirect back to menu
   if (!orderData) {
     return (
@@ -172,6 +189,11 @@ const Pickup = ({ orderData, setCurrentPage, setOrderData }) => {
       return;
     }
 
+    if (dateValidation && !dateValidation.isValid) {
+      alert('The selected pickup date is no longer available. Please choose another date.');
+      return;
+    }
+
     // Save pickup details to order data
     const updatedOrderData = {
       ...orderData,
@@ -199,10 +221,13 @@ const Pickup = ({ orderData, setCurrentPage, setOrderData }) => {
               </div>
               <div className="ml-3">
                 <p className="text-sm text-yellow-700 font-semibold">
-                  Orders must be placed at least 8 days in advance
+                  Orders must be placed by noon, 8 days before pickup
                 </p>
                 <p className="text-xs text-yellow-600 mt-1">
-                  Choose from available Saturdays and Mondays below
+                  • Saturday pickup → Order by Friday noon (8 days before)
+                </p>
+                <p className="text-xs text-yellow-600">
+                  • Monday pickup → Order by Sunday noon (8 days before)
                 </p>
               </div>
             </div>
@@ -306,16 +331,25 @@ const Pickup = ({ orderData, setCurrentPage, setOrderData }) => {
                       ))}
                     </select>
                     
-                    {selectedDate && orderingDeadline && (
-                      <div className="mt-3 p-3 bg-blue-50 rounded-lg text-sm">
-                        <p className="text-blue-800">
-                          <span className="font-semibold">Order by:</span> {orderingDeadline.toLocaleDateString('en-US', { 
+                    {/* Show deadline info when date is selected */}
+                    {selectedDate && dateValidation && dateValidation.isValid && (
+                      <div className="mt-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <p className="text-sm font-semibold text-green-800 mb-1">
+                          ✓ This date is available!
+                        </p>
+                        <p className="text-xs text-green-700">
+                          <span className="font-semibold">Ordering closes:</span>{' '}
+                          {new Date(dateValidation.orderingDeadline).toLocaleDateString('en-US', { 
                             weekday: 'long',
                             month: 'long', 
                             day: 'numeric',
                             hour: 'numeric',
-                            minute: '2-digit'
+                            minute: '2-digit',
+                            hour12: true
                           })}
+                        </p>
+                        <p className="text-xs text-green-600 mt-1">
+                          {dateValidation.message}
                         </p>
                       </div>
                     )}
@@ -361,78 +395,4 @@ const Pickup = ({ orderData, setCurrentPage, setOrderData }) => {
 
               {/* Pickup Summary */}
               {(selectedDate || selectedTime) && (
-                <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-                  <h2 className="text-2xl font-semibold mb-4">Pickup Summary</h2>
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <h3 className="font-semibold text-gray-700 mb-2">Location:</h3>
-                        <p className="text-lg">{location.name}</p>
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-700 mb-2">Date:</h3>
-                        <p className="text-lg">{selectedDate ? availableDates.find(d => d.date === selectedDate)?.displayDate : 'Not selected'}</p>
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-700 mb-2">Time:</h3>
-                        <p className="text-lg">{selectedTime || 'Not selected'}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <button
-                        onClick={() => setCurrentPage('order')}
-                        className="w-full bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition duration-300"
-                      >
-                        Back to Order
-                      </button>
-                      <button
-                        onClick={continueToPayment}
-                        disabled={!selectedDate || !selectedTime}
-                        className={`w-full py-3 rounded-lg font-semibold text-lg transition duration-300 ${
-                          selectedDate && selectedTime
-                            ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg hover:shadow-xl'
-                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        }`}
-                      >
-                        {selectedDate && selectedTime 
-                          ? 'Continue to Payment' 
-                          : 'Please select date and time'
-                        }
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Additional Info */}
-              <div className="bg-blue-50 rounded-lg p-6">
-                <h2 className="text-xl font-semibold mb-4">Pickup Information</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="font-semibold mb-2 text-blue-900">📋 What to Bring:</h3>
-                    <ul className="text-sm text-gray-700 space-y-1">
-                      <li>• Valid ID for verification</li>
-                      <li>• Order confirmation number</li>
-                      <li>• A healthy appetite!</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-2 text-blue-900">⏰ Pickup Guidelines:</h3>
-                    <ul className="text-sm text-gray-700 space-y-1">
-                      <li>• Arrive within 15 minutes of your slot</li>
-                      <li>• Orders held for 2 hours maximum</li>
-                      <li>• Call ahead if you're running late</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default Pickup;
+                <div className="bg-white rounded-lg shadow-
