@@ -743,7 +743,102 @@ const AdminDashboard = () => {
       return `${dayName}: ${schedule[day].morningStart}-${schedule[day].morningEnd}, ${schedule[day].eveningStart}-${schedule[day].eveningEnd}`;
     }).join(' | ');
   };
+  // Export functions for Order Summary
+  const exportToCSV = () => {
+    if (!startDate || !endDate) {
+      alert('Please select a date range first');
+      return;
+    }
 
+    // Create CSV content
+    const csvContent = [
+      ['Order Summary Report'],
+      [`Date Range: ${formatDate(startDate)} - ${formatDate(endDate)}`],
+      [`Filter Type: ${filterType === 'order' ? 'Order Dates' : 'Pickup Dates'}`],
+      [''],
+      ['Metric', 'Value'],
+      ['Total Orders', calendarSummary.totalOrders],
+      ['Total Revenue', `$${calendarSummary.totalRevenue.toFixed(2)}`],
+      ['Average Order Value', `$${calendarSummary.averageOrderValue.toFixed(2)}`]
+    ].map(row => row.join(',')).join('\n');
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `order-summary-${startDate}-to-${endDate}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportToPDF = () => {
+    if (!startDate || !endDate) {
+      alert('Please select a date range first');
+      return;
+    }
+
+    // Create printable content
+    const printContent = `
+      <html>
+        <head>
+          <title>Order Summary Report</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 40px; }
+            h1 { color: #1e40af; }
+            .summary-box { background: #f3f4f6; padding: 20px; margin: 20px 0; border-radius: 8px; }
+            .metric { margin: 15px 0; }
+            .metric-label { font-weight: bold; color: #4b5563; }
+            .metric-value { font-size: 24px; color: #1e40af; }
+          </style>
+        </head>
+        <body>
+          <h1>Order Summary Report</h1>
+          <p><strong>Date Range:</strong> ${formatDate(startDate)} - ${formatDate(endDate)}</p>
+          <p><strong>Filter Type:</strong> ${filterType === 'order' ? 'Order Dates' : 'Pickup Dates'}</p>
+          <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
+          
+          <div class="summary-box">
+            <div class="metric">
+              <div class="metric-label">Total Orders</div>
+              <div class="metric-value">${calendarSummary.totalOrders}</div>
+            </div>
+            
+            <div class="metric">
+              <div class="metric-label">Total Revenue</div>
+              <div class="metric-value">$${calendarSummary.totalRevenue.toFixed(2)}</div>
+            </div>
+            
+            <div class="metric">
+              <div class="metric-label">Average Order Value</div>
+              <div class="metric-value">$${calendarSummary.averageOrderValue.toFixed(2)}</div>
+            </div>
+          </div>
+          
+          <script>
+            window.onload = function() { window.print(); }
+          </script>
+        </body>
+      </html>
+    `;
+
+    // Open in new window and print
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+  };
+
+  const viewDetailedReport = () => {
+    if (!startDate || !endDate) {
+      alert('Please select a date range first');
+      return;
+    }
+
+    alert(`Detailed Report\n\nDate Range: ${formatDate(startDate)} - ${formatDate(endDate)}\nFilter: ${filterType === 'order' ? 'Order Dates' : 'Pickup Dates'}\n\nTotal Orders: ${calendarSummary.totalOrders}\nTotal Revenue: $${calendarSummary.totalRevenue.toFixed(2)}\nAverage Order Value: $${calendarSummary.averageOrderValue.toFixed(2)}\n\nNote: Full detailed reports coming soon!`);
+  };  
   if (loading && activeTab === 'dashboard') {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -1848,15 +1943,24 @@ const AdminDashboard = () => {
               <div className="bg-white rounded-lg shadow p-6">
                 <h4 className="font-semibold mb-4">Export Options</h4>
                 <div className="flex flex-wrap gap-3">
-                  <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                    Export to CSV
-                  </button>
-                  <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                    Export to PDF
-                  </button>
-                  <button className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
-                    View Detailed Report
-                  </button>
+              <button 
+                onClick={exportToCSV}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                Export to CSV
+              </button>
+              <button 
+                onClick={exportToPDF}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Export to PDF
+              </button>
+              <button 
+                onClick={viewDetailedReport}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                View Detailed Report
+              </button>
                 </div>
               </div>
             )}
