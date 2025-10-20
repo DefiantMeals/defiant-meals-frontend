@@ -744,101 +744,221 @@ const AdminDashboard = () => {
     }).join(' | ');
   };
   // Export functions for Order Summary
-  const exportToCSV = () => {
-    if (!startDate || !endDate) {
-      alert('Please select a date range first');
-      return;
-    }
-
-    // Create CSV content
-    const csvContent = [
-      ['Order Summary Report'],
-      [`Date Range: ${formatDate(startDate)} - ${formatDate(endDate)}`],
-      [`Filter Type: ${filterType === 'order' ? 'Order Dates' : 'Pickup Dates'}`],
-      [''],
-      ['Metric', 'Value'],
-      ['Total Orders', calendarSummary.totalOrders],
-      ['Total Revenue', `$${calendarSummary.totalRevenue.toFixed(2)}`],
-      ['Average Order Value', `$${calendarSummary.averageOrderValue.toFixed(2)}`]
-    ].map(row => row.join(',')).join('\n');
-
-    // Create blob and download
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
+ // Helper function to fetch and aggregate order data by menu items
+const fetchOrderDetails = async () => {
+  if (!startDate || !endDate) return null;
+  
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/orders`);
+    if (!response.ok) return null;
     
-    link.setAttribute('href', url);
-    link.setAttribute('download', `order-summary-${startDate}-to-${endDate}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+    const allOrders = await response.json();
+    
+    // Filter orders by date range and filter type
+    const filteredOrders = allOrders.filter(order => {
+      const dateToCheck = filterType === 'order' 
+        ? new Date(order.createdAt || order.orderDate)
+        : new Date(order.pickupDate);
+      
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      
+      return dateToCheck >= start && dateToCheck <= end;
+    });
+    
+    // Aggregate menu items
+    const itemCounts = {};
+    filteredOrders.forEach(order => {
+      order.items?.forEach(item => {
+        const itemName = item.name || item.menuItemId?.name || 'Unknown Item';
+        
+        if (!itemCounts[itemName]) {
+          itemCounts[itemName] = 0;
+        }
+        itemCounts[itemName] += item.quantity || 0;
+      });
+    });
+    
+    // Convert to sorted array
+    const itemsArray = Object.entries(itemCounts)
+      .map(([name, quantity]) => ({ name, quantity }))
+      .sort((a, b) => b.quantity - a.quantity);
+    
+    return {
+      items: itemsArray,
+      totalOrders: calendarSummary.totalOrders,
+      totalRevenue: calendarSummary.totalRevenue,
+      averageOrderValue: calendarSummary.averageOrderValue
+    };
+  } catch (error) {
+    console.error('Error fetching order details:', error);
+    return null;
+  }
+};
 
-  const exportToPDF = () => {
-    if (!startDate || !endDate) {
-      alert('Please select a date range first');
-      return;
-    }
+// Export to CSV with menu item breakdown
+const exportToCSV = async () => {
+  if (!startDate || !endDate) {
+    alert('Please select a date range first');
+    return;
+  }
 
-    // Create printable content
-    const printContent = `
-      <html>
-        <head>
-          <title>Order Summary Report</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 40px; }
-            h1 { color: #1e40af; }
-            .summary-box { background: #f3f4f6; padding: 20px; margin: 20px 0; border-radius: 8px; }
-            .metric { margin: 15px 0; }
-            .metric-label { font-weight: bold; color: #4b5563; }
-            .metric-value { font-size: 24px; color: #1e40af; }
-          </style>
-        </head>
-        <body>
-          <h1>Order Summary Report</h1>
-          <p><strong>Date Range:</strong> ${formatDate(startDate)} - ${formatDate(endDate)}</p>
-          <p><strong>Filter Type:</strong> ${filterType === 'order' ? 'Order Dates' : 'Pickup Dates'}</p>
-          <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
-          
-          <div class="summary-box">
-            <div class="metric">
-              <div class="metric-label">Total Orders</div>
-              <div class="metric-value">${calendarSummary.totalOrders}</div>
-            </div>
-            
-            <div class="metric">
-              <div class="metric-label">Total Revenue</div>
-              <div class="metric-value">$${calendarSummary.totalRevenue.toFixed(2)}</div>
-            </div>
-            
-            <div class="metric">
-              <div class="metric-label">Average Order Value</div>
-              <div class="metric-value">$${calendarSummary.averageOrderValue.toFixed(2)}</div>
-            </div>
+  const data = await fetchOrderDetails();
+  if (!data) {
+    alert('Failed to fetch order details');
+    return;
+  }
+
+  // Create CSV content
+  const csvRows = [
+    ['Order Summary Report'],
+    [`Date Range: ${formatDate(startDate)} - ${formatDate(endDate)}`],
+    [`Filter Type: ${filterType === 'order' ? 'Order Dates' : 'Pickup Dates'}`],
+    [''],
+    ['Summary Metrics'],
+    ['Total Orders', data.totalOrders],
+    ['Total Revenue', `$${data.totalRevenue.toFixed(2)}`],
+    ['Average Order Value', `$${data.averageOrderValue.toFixed(2)}`],
+    [''],
+    ['Menu Item Breakdown'],
+    ['Menu Item', 'Quantity Ordered'],
+    ...data.items.map(item => [item.name, item.quantity])
+  ];
+
+  const csvContent = csvRows.map(row => row.join(',')).join('\n');
+
+  // Download CSV
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  
+  link.setAttribute('href', url);
+  link.setAttribute('download', `order-summary-${startDate}-to-${endDate}.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+// Export to PDF with menu item breakdown
+const exportToPDF = async () => {
+  if (!startDate || !endDate) {
+    alert('Please select a date range first');
+    return;
+  }
+
+  const data = await fetchOrderDetails();
+  if (!data) {
+    alert('Failed to fetch order details');
+    return;
+  }
+
+  // Create printable content
+  const itemRows = data.items.map(item => 
+    `<tr><td>${item.name}</td><td style="text-align: right;">${item.quantity}</td></tr>`
+  ).join('');
+
+  const printContent = `
+    <html>
+      <head>
+        <title>Order Summary Report</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 40px; }
+          h1 { color: #1e40af; margin-bottom: 10px; }
+          h2 { color: #4b5563; margin-top: 30px; margin-bottom: 15px; font-size: 18px; }
+          .info { color: #6b7280; margin-bottom: 30px; }
+          .summary-box { background: #f3f4f6; padding: 20px; margin: 20px 0; border-radius: 8px; }
+          .metric { display: inline-block; margin: 10px 30px 10px 0; }
+          .metric-label { font-weight: bold; color: #4b5563; font-size: 12px; }
+          .metric-value { font-size: 24px; color: #1e40af; margin-top: 5px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+          th, td { padding: 10px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+          th { background: #f9fafb; font-weight: bold; color: #374151; }
+          tr:hover { background: #f9fafb; }
+        </style>
+      </head>
+      <body>
+        <h1>Order Summary Report</h1>
+        <div class="info">
+          <div><strong>Date Range:</strong> ${formatDate(startDate)} - ${formatDate(endDate)}</div>
+          <div><strong>Filter Type:</strong> ${filterType === 'order' ? 'Order Dates' : 'Pickup Dates'}</div>
+          <div><strong>Generated:</strong> ${new Date().toLocaleString()}</div>
+        </div>
+        
+        <h2>Summary Metrics</h2>
+        <div class="summary-box">
+          <div class="metric">
+            <div class="metric-label">Total Orders</div>
+            <div class="metric-value">${data.totalOrders}</div>
           </div>
           
-          <script>
-            window.onload = function() { window.print(); }
-          </script>
-        </body>
-      </html>
-    `;
+          <div class="metric">
+            <div class="metric-label">Total Revenue</div>
+            <div class="metric-value">$${data.totalRevenue.toFixed(2)}</div>
+          </div>
+          
+          <div class="metric">
+            <div class="metric-label">Average Order Value</div>
+            <div class="metric-value">$${data.averageOrderValue.toFixed(2)}</div>
+          </div>
+        </div>
+        
+        <h2>Menu Item Breakdown</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Menu Item</th>
+              <th style="text-align: right;">Quantity Ordered</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemRows}
+          </tbody>
+        </table>
+        
+        <script>
+          window.onload = function() { window.print(); }
+        </script>
+      </body>
+    </html>
+  `;
 
-    // Open in new window and print
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-  };
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(printContent);
+  printWindow.document.close();
+};
 
-  const viewDetailedReport = () => {
-    if (!startDate || !endDate) {
-      alert('Please select a date range first');
-      return;
-    }
+// View Detailed Report with menu item breakdown
+const viewDetailedReport = async () => {
+  if (!startDate || !endDate) {
+    alert('Please select a date range first');
+    return;
+  }
 
-    alert(`Detailed Report\n\nDate Range: ${formatDate(startDate)} - ${formatDate(endDate)}\nFilter: ${filterType === 'order' ? 'Order Dates' : 'Pickup Dates'}\n\nTotal Orders: ${calendarSummary.totalOrders}\nTotal Revenue: $${calendarSummary.totalRevenue.toFixed(2)}\nAverage Order Value: $${calendarSummary.averageOrderValue.toFixed(2)}\n\nNote: Full detailed reports coming soon!`);
-  };  
+  const data = await fetchOrderDetails();
+  if (!data) {
+    alert('Failed to fetch order details');
+    return;
+  }
+
+  const topItems = data.items.slice(0, 10);
+  const itemsList = topItems.map(item => `${item.name}: ${item.quantity}`).join('\n');
+  const moreCount = data.items.length - 10;
+
+  alert(
+    `Detailed Report\n\n` +
+    `Date Range: ${formatDate(startDate)} - ${formatDate(endDate)}\n` +
+    `Filter: ${filterType === 'order' ? 'Order Dates' : 'Pickup Dates'}\n\n` +
+    `SUMMARY:\n` +
+    `Total Orders: ${data.totalOrders}\n` +
+    `Total Revenue: $${data.totalRevenue.toFixed(2)}\n` +
+    `Average Order Value: $${data.averageOrderValue.toFixed(2)}\n\n` +
+    `TOP MENU ITEMS:\n${itemsList}` +
+    (moreCount > 0 ? `\n...and ${moreCount} more items` : '') +
+    `\n\nUse "Export to CSV" or "Export to PDF" for complete details.`
+  );
+};
   if (loading && activeTab === 'dashboard') {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
