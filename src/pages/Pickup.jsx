@@ -395,4 +395,78 @@ const Pickup = ({ orderData, setCurrentPage, setOrderData }) => {
 
               {/* Pickup Summary */}
               {(selectedDate || selectedTime) && (
-                <div className="bg-white rounded-lg shadow-
+                <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+                  <h2 className="text-2xl font-semibold mb-4">Pickup Summary</h2>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <h3 className="font-semibold text-gray-700 mb-2">Location:</h3>
+                        <p className="text-lg">{location.name}</p>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-700 mb-2">Date:</h3>
+                        <p className="text-lg">{selectedDate ? availableDates.find(d => d.date === selectedDate)?.displayDate : 'Not selected'}</p>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-700 mb-2">Time:</h3>
+                        <p className="text-lg">{selectedTime || 'Not selected'}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <button
+                        onClick={() => setCurrentPage('order')}
+                        className="w-full bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition duration-300"
+                      >
+                        Back to Order
+                      </button>
+                      <button
+                        onClick={continueToPayment}
+                        disabled={!selectedDate || !selectedTime || (dateValidation && !dateValidation.isValid)}
+                        className={`w-full py-3 rounded-lg font-semibold text-lg transition duration-300 ${
+                          selectedDate && selectedTime && dateValidation?.isValid
+                            ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg hover:shadow-xl'
+                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        }`}
+                      >
+                        {selectedDate && selectedTime 
+                          ? 'Continue to Payment' 
+                          : 'Please select date and time'
+                        }
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Additional Info */}
+              <div className="bg-blue-50 rounded-lg p-6">
+                <h2 className="text-xl font-semibold mb-4">Pickup Information</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="font-semibold mb-2 text-blue-900">📋 What to Bring:</h3>
+                    <ul className="text-sm text-gray-700 space-y-1">
+                      <li>• Valid ID for verification</li>
+                      <li>• Order confirmation number</li>
+                      <li>• A healthy appetite!</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold mb-2 text-blue-900">⏰ Pickup Guidelines:</h3>
+                    <ul className="text-sm text-gray-700 space-y-1">
+                      <li>• Arrive within 15 minutes of your slot</li>
+                      <li>• Orders held for 2 hours maximum</li>
+                      <li>• Call ahead if you're running late</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Pickup;
