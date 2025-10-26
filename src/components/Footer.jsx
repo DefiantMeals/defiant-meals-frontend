@@ -63,7 +63,7 @@ const Footer = ({ setCurrentPage }) => {
             <h4 className="text-lg font-semibold mb-4">Follow Us</h4>
             <div className="flex space-x-4">
               <a 
-                href="https://facebook.com/defiantmeals" 
+                href="https://web.facebook.com/profile.php?id=61578112181517" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="hover:opacity-80 transition duration-300"
