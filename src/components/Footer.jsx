@@ -36,7 +36,7 @@ const Footer = ({ setCurrentPage }) => {
                   onClick={() => setCurrentPage('My Basket')}
                   className="text-gray-300 hover:text-white transition duration-300"
                 >
-                  Order
+                  My Basket
                 </button>
               </li>
               <li>
@@ -74,6 +74,7 @@ const Footer = ({ setCurrentPage }) => {
                   className="w-8 h-8 rounded"
                 />
               </a>
+              {/* Commented out until Instagram account is created
               <a 
                 href="https://instagram.com/defiantmeals" 
                 target="_blank" 
@@ -86,6 +87,8 @@ const Footer = ({ setCurrentPage }) => {
                   className="w-8 h-8 rounded"
                 />
               </a>
+              */}
+              {/* Commented out until Twitter/X account is created
               <a 
                 href="https://twitter.com/defiantmeals" 
                 target="_blank" 
@@ -98,6 +101,7 @@ const Footer = ({ setCurrentPage }) => {
                   className="w-8 h-8 rounded"
                 />
               </a>
+              */}
             </div>
           </div>
         </div>
