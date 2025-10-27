@@ -1,5 +1,39 @@
 import React, { useState } from 'react';
 
+// ============================================
+// STRIPE INTEGRATION - COMMENTED OUT
+// UNCOMMENT THESE IMPORTS WHEN STRIPE KEYS ARE ADDED
+// ============================================
+// import { loadStripe } from '@stripe/stripe-js';
+// import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+
+// ============================================
+// ADD TO FRONTEND .env FILE WHEN READY:
+// REACT_APP_STRIPE_PUBLISHABLE_KEY=pk_test_xxxxx
+// ============================================
+// const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
+
+// ============================================
+// STRIPE CARD ELEMENT STYLES (UNCOMMENT WHEN READY)
+// ============================================
+// const CARD_ELEMENT_OPTIONS = {
+//   style: {
+//     base: {
+//       color: '#32325d',
+//       fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
+//       fontSmoothing: 'antialiased',
+//       fontSize: '16px',
+//       '::placeholder': {
+//         color: '#aab7c4'
+//       }
+//     },
+//     invalid: {
+//       color: '#fa755a',
+//       iconColor: '#fa755a'
+//     }
+//   }
+// };
+
 const Payment = ({ orderData, setCurrentPage, handleRemoveFromCart }) => {
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -10,6 +44,13 @@ const Payment = ({ orderData, setCurrentPage, handleRemoveFromCart }) => {
     cvv: '',
     cardholderName: ''
   });
+
+  // ============================================
+  // UNCOMMENT THESE WHEN STRIPE IS READY
+  // ============================================
+  // const stripe = useStripe();
+  // const elements = useElements();
+  // const [stripeError, setStripeError] = useState(null);
 
   // If no order data, redirect back to menu
   if (!orderData) {
@@ -40,11 +81,58 @@ const Payment = ({ orderData, setCurrentPage, handleRemoveFromCart }) => {
   const processPayment = async () => {
     setIsProcessing(true);
 
-    // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
     try {
-      // Submit complete order with payment info
+      // ============================================
+      // STRIPE PAYMENT PROCESSING (UNCOMMENT WHEN READY)
+      // ============================================
+      // if (paymentMethod === 'card') {
+      //   if (!stripe || !elements) {
+      //     alert('Stripe is not loaded yet. Please try again.');
+      //     setIsProcessing(false);
+      //     return;
+      //   }
+      //
+      //   // Create payment intent on backend
+      //   const paymentIntentResponse = await fetch('https://defiant-meals-backend.onrender.com/api/payments/create-intent', {
+      //     method: 'POST',
+      //     headers: { 'Content-Type': 'application/json' },
+      //     body: JSON.stringify({
+      //       amount: Math.round(orderData.total * 100), // Amount in cents
+      //       customerEmail: orderData.customer.email,
+      //       customerName: orderData.customer.name
+      //     })
+      //   });
+      //
+      //   const { clientSecret, error: intentError } = await paymentIntentResponse.json();
+      //
+      //   if (intentError) {
+      //     throw new Error(intentError);
+      //   }
+      //
+      //   // Confirm payment with Stripe
+      //   const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+      //     payment_method: {
+      //       card: elements.getElement(CardElement),
+      //       billing_details: {
+      //         name: orderData.customer.name,
+      //         email: orderData.customer.email,
+      //         phone: orderData.customer.phone
+      //       }
+      //     }
+      //   });
+      //
+      //   if (stripeError) {
+      //     throw new Error(stripeError.message);
+      //   }
+      //
+      //   // Payment successful, add payment ID to order
+      //   orderData.stripePaymentId = paymentIntent.id;
+      // }
+
+      // Simulate payment processing for now (REMOVE THIS when Stripe is active)
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Submit complete order
       const completeOrder = {
         ...orderData,
         pickupDate: orderData.pickupDate,
@@ -69,11 +157,11 @@ const Payment = ({ orderData, setCurrentPage, handleRemoveFromCart }) => {
           orderData.items.forEach(item => handleRemoveFromCart(item.id));
         }
       } else {
-        throw new Error('Payment failed');
+        throw new Error('Order submission failed');
       }
     } catch (error) {
       console.error('Payment error:', error);
-      alert('Payment failed. Please try again.');
+      alert('Payment failed: ' + error.message);
     } finally {
       setIsProcessing(false);
     }
@@ -123,7 +211,10 @@ const Payment = ({ orderData, setCurrentPage, handleRemoveFromCart }) => {
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-3">Payment Method</label>
               <div className="flex gap-4">
-                <button
+                {/* ============================================
+                    UNCOMMENT THIS BUTTON WHEN STRIPE IS READY
+                    ============================================ */}
+                {/* <button
                   onClick={() => setPaymentMethod('card')}
                   className={`flex-1 p-3 rounded-lg border-2 transition duration-300 ${
                     paymentMethod === 'card' 
@@ -132,7 +223,17 @@ const Payment = ({ orderData, setCurrentPage, handleRemoveFromCart }) => {
                   }`}
                 >
                   💳 Credit/Debit Card
+                </button> */}
+                
+                {/* TEMPORARY: Disabled card button until Stripe is ready */}
+                <button
+                  disabled
+                  className="flex-1 p-3 rounded-lg border-2 border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
+                  title="Card payments coming soon"
+                >
+                  💳 Credit/Debit Card (Coming Soon)
                 </button>
+                
                 <button
                   onClick={() => setPaymentMethod('cash')}
                   className={`flex-1 p-3 rounded-lg border-2 transition duration-300 ${
@@ -146,68 +247,41 @@ const Payment = ({ orderData, setCurrentPage, handleRemoveFromCart }) => {
               </div>
             </div>
 
-            {/* Card Payment Form */}
-            {paymentMethod === 'card' && (
+            {/* ============================================
+                STRIPE CARD ELEMENT (UNCOMMENT WHEN READY)
+                REPLACE THE FAKE FORM BELOW WITH THIS
+                ============================================ */}
+            {/* {paymentMethod === 'card' && (
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="cardholderName" className="block text-sm font-medium text-gray-700 mb-2">
-                    Cardholder Name *
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Card Information *
                   </label>
-                  <input
-                    type="text"
-                    id="cardholderName"
-                    name="cardholderName"
-                    value={paymentInfo.cardholderName}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="John Doe"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="cardNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                    Card Number *
-                  </label>
-                  <input
-                    type="text"
-                    id="cardNumber"
-                    name="cardNumber"
-                    value={paymentInfo.cardNumber}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="1234 5678 9012 3456"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="expiryDate" className="block text-sm font-medium text-gray-700 mb-2">
-                      Expiry Date *
-                    </label>
-                    <input
-                      type="text"
-                      id="expiryDate"
-                      name="expiryDate"
-                      value={paymentInfo.expiryDate}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="MM/YY"
-                    />
+                  <div className="border border-gray-300 rounded-md p-3">
+                    <CardElement options={CARD_ELEMENT_OPTIONS} />
                   </div>
-                  <div>
-                    <label htmlFor="cvv" className="block text-sm font-medium text-gray-700 mb-2">
-                      CVV *
-                    </label>
-                    <input
-                      type="text"
-                      id="cvv"
-                      name="cvv"
-                      value={paymentInfo.cvv}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="123"
-                    />
-                  </div>
+                  {stripeError && (
+                    <p className="text-red-600 text-sm mt-2">{stripeError}</p>
+                  )}
+                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-blue-700">
+                    🔒 Your payment is secure and encrypted with Stripe
+                  </p>
+                </div>
+              </div>
+            )} */}
+
+            {/* TEMPORARY FAKE CARD FORM - DELETE THIS SECTION WHEN STRIPE IS ACTIVE */}
+            {paymentMethod === 'card' && (
+              <div className="space-y-4">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <p className="text-sm text-yellow-800 font-semibold">
+                    ⚠️ Card payments not yet configured
+                  </p>
+                  <p className="text-sm text-yellow-700 mt-1">
+                    Please use "Pay on Pickup" option for now.
+                  </p>
                 </div>
               </div>
             )}
@@ -244,7 +318,7 @@ const Payment = ({ orderData, setCurrentPage, handleRemoveFromCart }) => {
               <div className="text-sm text-gray-600 space-y-1">
                 <p><strong>Date:</strong> {orderData.pickupDate || 'Not selected'}</p>
                 <p><strong>Time:</strong> {orderData.pickupTime || 'Not selected'}</p>
-                <p><strong>Location:</strong> 123 Main Street, Your City</p>
+                <p><strong>Location:</strong> 1904 Elm St, Eudora KS 66025</p>
               </div>
             </div>
 
@@ -283,15 +357,16 @@ const Payment = ({ orderData, setCurrentPage, handleRemoveFromCart }) => {
             <div className="space-y-3">
               <button
                 onClick={processPayment}
-                disabled={isProcessing}
+                disabled={isProcessing || paymentMethod === 'card'}
                 className={`w-full py-3 rounded-lg font-semibold transition duration-300 ${
-                  isProcessing
+                  isProcessing || paymentMethod === 'card'
                     ? 'bg-gray-400 cursor-not-allowed'
                     : 'bg-green-600 hover:bg-green-700'
                 } text-white`}
               >
-                {isProcessing ? 'Processing Payment...' : 
-                 paymentMethod === 'cash' ? 'Confirm Order' : 'Complete Payment'}
+                {isProcessing ? 'Processing...' : 
+                 paymentMethod === 'card' ? 'Card Payments Coming Soon' :
+                 'Confirm Order'}
               </button>
               
               <button
@@ -309,3 +384,19 @@ const Payment = ({ orderData, setCurrentPage, handleRemoveFromCart }) => {
 };
 
 export default Payment;
+
+// ============================================
+// WHEN READY TO ACTIVATE STRIPE:
+// 1. Install Stripe packages:
+//    npm install @stripe/stripe-js @stripe/react-stripe-js
+//
+// 2. Wrap Payment component in App.jsx with:
+//    <Elements stripe={stripePromise}>
+//      <Payment ... />
+//    </Elements>
+//
+// 3. Uncomment all sections marked with comments
+// 4. Delete the "TEMPORARY FAKE CARD FORM" section
+// 5. Add REACT_APP_STRIPE_PUBLISHABLE_KEY to .env
+// 6. Backend needs Stripe secret key in environment
+// ============================================
