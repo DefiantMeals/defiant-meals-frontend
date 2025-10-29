@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements } from '@stripe/react-stripe-js';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -8,6 +10,8 @@ import Pickup from './pages/Pickup';
 import Payment from './pages/Payment';
 import Contact from './pages/Contact';
 import Admin from './pages/Admin';
+
+const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
 
 const App = () => {
   const [currentPage, setCurrentPage] = useState('home');
@@ -116,12 +120,16 @@ const App = () => {
           setOrderData={setOrderData}
         />;
       case 'payment':
-        return <Payment 
-          orderData={orderData}
-          setCurrentPage={setCurrentPage}
-          handleRemoveFromCart={handleRemoveFromCart}
-          clearOrderData={clearOrderData}
-        />;
+        return (
+          <Elements stripe={stripePromise}>
+            <Payment 
+              orderData={orderData}
+              setCurrentPage={setCurrentPage}
+              handleRemoveFromCart={handleRemoveFromCart}
+              clearOrderData={clearOrderData}
+            />
+          </Elements>
+        );
       case 'contact':
         return <Contact />;
       case 'admin':

@@ -1,56 +1,31 @@
 import React, { useState } from 'react';
+import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
-// ============================================
-// STRIPE INTEGRATION - COMMENTED OUT
-// UNCOMMENT THESE IMPORTS WHEN STRIPE KEYS ARE ADDED
-// ============================================
-// import { loadStripe } from '@stripe/stripe-js';
-// import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
-
-// ============================================
-// ADD TO FRONTEND .env FILE WHEN READY:
-// REACT_APP_STRIPE_PUBLISHABLE_KEY=pk_test_xxxxx
-// ============================================
-// const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
-
-// ============================================
-// STRIPE CARD ELEMENT STYLES (UNCOMMENT WHEN READY)
-// ============================================
-// const CARD_ELEMENT_OPTIONS = {
-//   style: {
-//     base: {
-//       color: '#32325d',
-//       fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
-//       fontSmoothing: 'antialiased',
-//       fontSize: '16px',
-//       '::placeholder': {
-//         color: '#aab7c4'
-//       }
-//     },
-//     invalid: {
-//       color: '#fa755a',
-//       iconColor: '#fa755a'
-//     }
-//   }
-// };
+const CARD_ELEMENT_OPTIONS = {
+  style: {
+    base: {
+      color: '#32325d',
+      fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
+      fontSmoothing: 'antialiased',
+      fontSize: '16px',
+      '::placeholder': {
+        color: '#aab7c4'
+      }
+    },
+    invalid: {
+      color: '#fa755a',
+      iconColor: '#fa755a'
+    }
+  }
+};
 
 const Payment = ({ orderData, setCurrentPage, handleRemoveFromCart }) => {
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
-  const [paymentInfo, setPaymentInfo] = useState({
-    cardNumber: '',
-    expiryDate: '',
-    cvv: '',
-    cardholderName: ''
-  });
-
-  // ============================================
-  // UNCOMMENT THESE WHEN STRIPE IS READY
-  // ============================================
-  // const stripe = useStripe();
-  // const elements = useElements();
-  // const [stripeError, setStripeError] = useState(null);
+  const stripe = useStripe();
+  const elements = useElements();
+  const [stripeError, setStripeError] = useState(null);
 
   // If no order data, redirect back to menu
   if (!orderData) {
@@ -70,67 +45,54 @@ const Payment = ({ orderData, setCurrentPage, handleRemoveFromCart }) => {
     );
   }
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setPaymentInfo(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
   const processPayment = async () => {
     setIsProcessing(true);
+    setStripeError(null);
 
     try {
-      // ============================================
-      // STRIPE PAYMENT PROCESSING (UNCOMMENT WHEN READY)
-      // ============================================
-      // if (paymentMethod === 'card') {
-      //   if (!stripe || !elements) {
-      //     alert('Stripe is not loaded yet. Please try again.');
-      //     setIsProcessing(false);
-      //     return;
-      //   }
-      //
-      //   // Create payment intent on backend
-      //   const paymentIntentResponse = await fetch('https://defiant-meals-backend.onrender.com/api/payments/create-intent', {
-      //     method: 'POST',
-      //     headers: { 'Content-Type': 'application/json' },
-      //     body: JSON.stringify({
-      //       amount: Math.round(orderData.total * 100), // Amount in cents
-      //       customerEmail: orderData.customer.email,
-      //       customerName: orderData.customer.name
-      //     })
-      //   });
-      //
-      //   const { clientSecret, error: intentError } = await paymentIntentResponse.json();
-      //
-      //   if (intentError) {
-      //     throw new Error(intentError);
-      //   }
-      //
-      //   // Confirm payment with Stripe
-      //   const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-      //     payment_method: {
-      //       card: elements.getElement(CardElement),
-      //       billing_details: {
-      //         name: orderData.customer.name,
-      //         email: orderData.customer.email,
-      //         phone: orderData.customer.phone
-      //       }
-      //     }
-      //   });
-      //
-      //   if (stripeError) {
-      //     throw new Error(stripeError.message);
-      //   }
-      //
-      //   // Payment successful, add payment ID to order
-      //   orderData.stripePaymentId = paymentIntent.id;
-      // }
+      if (paymentMethod === 'card') {
+        if (!stripe || !elements) {
+          alert('Stripe is not loaded yet. Please try again.');
+          setIsProcessing(false);
+          return;
+        }
 
-      // Simulate payment processing for now (REMOVE THIS when Stripe is active)
-      await new Promise(resolve => setTimeout(resolve, 2000));
+        // Create payment intent on backend
+        const paymentIntentResponse = await fetch('https://defiant-meals-backend.onrender.com/api/payments/create-intent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: Math.round(orderData.total * 100), // Amount in cents
+            customerEmail: orderData.customer.email,
+            customerName: orderData.customer.name
+          })
+        });
+
+        const { clientSecret, error: intentError } = await paymentIntentResponse.json();
+
+        if (intentError) {
+          throw new Error(intentError);
+        }
+
+        // Confirm payment with Stripe
+        const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+          payment_method: {
+            card: elements.getElement(CardElement),
+            billing_details: {
+              name: orderData.customer.name,
+              email: orderData.customer.email,
+              phone: orderData.customer.phone
+            }
+          }
+        });
+
+        if (confirmError) {
+          throw new Error(confirmError.message);
+        }
+
+        // Payment successful, add payment ID to order
+        orderData.stripePaymentId = paymentIntent.id;
+      }
 
       // Submit complete order
       const completeOrder = {
@@ -161,6 +123,7 @@ const Payment = ({ orderData, setCurrentPage, handleRemoveFromCart }) => {
       }
     } catch (error) {
       console.error('Payment error:', error);
+      setStripeError(error.message);
       alert('Payment failed: ' + error.message);
     } finally {
       setIsProcessing(false);
@@ -211,10 +174,7 @@ const Payment = ({ orderData, setCurrentPage, handleRemoveFromCart }) => {
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-3">Payment Method</label>
               <div className="flex gap-4">
-                {/* ============================================
-                    UNCOMMENT THIS BUTTON WHEN STRIPE IS READY
-                    ============================================ */}
-                {/* <button
+                <button
                   onClick={() => setPaymentMethod('card')}
                   className={`flex-1 p-3 rounded-lg border-2 transition duration-300 ${
                     paymentMethod === 'card' 
@@ -223,15 +183,6 @@ const Payment = ({ orderData, setCurrentPage, handleRemoveFromCart }) => {
                   }`}
                 >
                   💳 Credit/Debit Card
-                </button> */}
-                
-                {/* TEMPORARY: Disabled card button until Stripe is ready */}
-                <button
-                  disabled
-                  className="flex-1 p-3 rounded-lg border-2 border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
-                  title="Card payments coming soon"
-                >
-                  💳 Credit/Debit Card (Coming Soon)
                 </button>
                 
                 <button
@@ -247,11 +198,8 @@ const Payment = ({ orderData, setCurrentPage, handleRemoveFromCart }) => {
               </div>
             </div>
 
-            {/* ============================================
-                STRIPE CARD ELEMENT (UNCOMMENT WHEN READY)
-                REPLACE THE FAKE FORM BELOW WITH THIS
-                ============================================ */}
-            {/* {paymentMethod === 'card' && (
+            {/* Stripe Card Element */}
+            {paymentMethod === 'card' && (
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -267,20 +215,6 @@ const Payment = ({ orderData, setCurrentPage, handleRemoveFromCart }) => {
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <p className="text-sm text-blue-700">
                     🔒 Your payment is secure and encrypted with Stripe
-                  </p>
-                </div>
-              </div>
-            )} */}
-
-            {/* TEMPORARY FAKE CARD FORM - DELETE THIS SECTION WHEN STRIPE IS ACTIVE */}
-            {paymentMethod === 'card' && (
-              <div className="space-y-4">
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <p className="text-sm text-yellow-800 font-semibold">
-                    ⚠️ Card payments not yet configured
-                  </p>
-                  <p className="text-sm text-yellow-700 mt-1">
-                    Please use "Pay on Pickup" option for now.
                   </p>
                 </div>
               </div>
@@ -357,16 +291,14 @@ const Payment = ({ orderData, setCurrentPage, handleRemoveFromCart }) => {
             <div className="space-y-3">
               <button
                 onClick={processPayment}
-                disabled={isProcessing || paymentMethod === 'card'}
+                disabled={isProcessing}
                 className={`w-full py-3 rounded-lg font-semibold transition duration-300 ${
-                  isProcessing || paymentMethod === 'card'
+                  isProcessing
                     ? 'bg-gray-400 cursor-not-allowed'
                     : 'bg-green-600 hover:bg-green-700'
                 } text-white`}
               >
-                {isProcessing ? 'Processing...' : 
-                 paymentMethod === 'card' ? 'Card Payments Coming Soon' :
-                 'Confirm Order'}
+                {isProcessing ? 'Processing...' : 'Confirm Order'}
               </button>
               
               <button
@@ -384,19 +316,3 @@ const Payment = ({ orderData, setCurrentPage, handleRemoveFromCart }) => {
 };
 
 export default Payment;
-
-// ============================================
-// WHEN READY TO ACTIVATE STRIPE:
-// 1. Install Stripe packages:
-//    npm install @stripe/stripe-js @stripe/react-stripe-js
-//
-// 2. Wrap Payment component in App.jsx with:
-//    <Elements stripe={stripePromise}>
-//      <Payment ... />
-//    </Elements>
-//
-// 3. Uncomment all sections marked with comments
-// 4. Delete the "TEMPORARY FAKE CARD FORM" section
-// 5. Add REACT_APP_STRIPE_PUBLISHABLE_KEY to .env
-// 6. Backend needs Stripe secret key in environment
-// ============================================
