@@ -32,6 +32,11 @@ const App = () => {
     return saved ? JSON.parse(saved) : { name: '', email: '', phone: '' };
   });
 
+  const [pickupDetails, setPickupDetails] = useState(() => {
+    const saved = sessionStorage.getItem('pickupDetails');
+    return saved ? JSON.parse(saved) : { date: '', time: '' };
+  });
+
   // Save cartItems to sessionStorage whenever it changes
   useEffect(() => {
     sessionStorage.setItem('cartItems', JSON.stringify(cartItems));
@@ -50,6 +55,11 @@ const App = () => {
   useEffect(() => {
     sessionStorage.setItem('customerInfo', JSON.stringify(customerInfo));
   }, [customerInfo]);
+
+  // Save pickupDetails to sessionStorage whenever it changes
+  useEffect(() => {
+    sessionStorage.setItem('pickupDetails', JSON.stringify(pickupDetails));
+  }, [pickupDetails]);
 
   const handleAddToCart = (item) => {
     setCartItems(prev => {
@@ -82,13 +92,20 @@ const App = () => {
     setCartItems(prev => prev.filter(item => item.id !== id));
   };
 
+  const clearCart = () => {
+    setCartItems([]);
+    sessionStorage.removeItem('cartItems');
+  };
+
   const clearOrderData = () => {
     setOrderData(null);
     setCustomerInfo({ name: '', email: '', phone: '' });
+    setPickupDetails({ date: '', time: '' });
     setCartItems([]);
     // Clear sessionStorage
     sessionStorage.removeItem('orderData');
     sessionStorage.removeItem('customerInfo');
+    sessionStorage.removeItem('pickupDetails');
     sessionStorage.removeItem('cartItems');
   };
 
@@ -118,15 +135,17 @@ const App = () => {
           orderData={orderData}
           setCurrentPage={setCurrentPage}
           setOrderData={setOrderData}
+          setPickupDetails={setPickupDetails}
         />;
       case 'payment':
         return (
           <Elements stripe={stripePromise}>
             <Payment 
-              orderData={orderData}
+              cart={cartItems}
+              customerInfo={customerInfo}
+              pickupDetails={pickupDetails}
               setCurrentPage={setCurrentPage}
-              handleRemoveFromCart={handleRemoveFromCart}
-              clearOrderData={clearOrderData}
+              clearCart={clearCart}
             />
           </Elements>
         );
