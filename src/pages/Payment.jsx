@@ -11,7 +11,31 @@ const Payment = ({ cart, customerInfo, pickupDetails, setCurrentPage, clearCart 
   const [orderConfirmed, setOrderConfirmed] = useState(false);
   const [clientSecret, setClientSecret] = useState('');
 
-  const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  // Add this safety check:
+  if (!cart || cart.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12 px-4 text-center">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Your cart is empty</h2>
+        <button
+          onClick={() => setCurrentPage('menu')}
+          className="bg-amber-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-amber-700"
+        >
+          Go to Menu
+        </button>
+      </div>
+    );
+  }
+
+ 
+
+  // Create Stripe checkout session when component mounts and card is selected
+  useEffect(() => {
+    if (paymentMethod === 'card' && !clientSecret) {
+      createCheckoutSession();
+    }
+  }, [paymentMethod]);
+
+const totalAmount = cart?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || 0;
 
   // Create Stripe checkout session when component mounts and card is selected
   useEffect(() => {
