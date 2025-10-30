@@ -6,12 +6,13 @@ import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 const Payment = ({ cart, customerInfo, pickupDetails, setCurrentPage, clearCart }) => {
-  const [paymentMethod, setPaymentMethod] = useState('card');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [orderConfirmed, setOrderConfirmed] = useState(false);
   const [clientSecret, setClientSecret] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  // Add this safety check:
+  const totalAmount = cart?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || 0;
+
+  // Safety check for empty cart
   if (!cart || cart.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 py-12 px-4 text-center">
@@ -26,26 +27,14 @@ const Payment = ({ cart, customerInfo, pickupDetails, setCurrentPage, clearCart 
     );
   }
 
- 
-
-  // Create Stripe checkout session when component mounts and card is selected
+  // Create Stripe checkout session when component mounts
   useEffect(() => {
-    if (paymentMethod === 'card' && !clientSecret) {
-      createCheckoutSession();
-    }
-  }, [paymentMethod]);
-
-const totalAmount = cart?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || 0;
-
-  // Create Stripe checkout session when component mounts and card is selected
-  useEffect(() => {
-    if (paymentMethod === 'card' && !clientSecret) {
-      createCheckoutSession();
-    }
-  }, [paymentMethod]);
+    createCheckoutSession();
+  }, []);
 
   const createCheckoutSession = async () => {
     try {
+      setLoading(true);
       const response = await fetch('https://defiant-meals-backend.onrender.com/api/payments/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -59,76 +48,19 @@ const totalAmount = cart?.reduce((sum, item) => sum + (item.price * item.quantit
         }),
       });
 
+      if (!response.ok) {
+        throw new Error('Failed to create checkout session');
+      }
+
       const data = await response.json();
       setClientSecret(data.clientSecret);
+      setLoading(false);
     } catch (error) {
       console.error('Error creating checkout session:', error);
-      alert('Failed to initialize payment. Please try again.');
+      setError('Failed to initialize payment. Please try again.');
+      setLoading(false);
     }
   };
-
-  const handlePayOnPickup = async () => {
-    setIsProcessing(true);
-
-    try {
-      const orderData = {
-        customerInfo,
-        items: cart,
-        pickupDetails,
-        totalAmount,
-        paymentMethod: 'Pay on Pickup',
-        paymentStatus: 'Pending'
-      };
-
-      const response = await fetch('https://defiant-meals-backend.onrender.com/api/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(orderData),
-      });
-
-      if (response.ok) {
-        setOrderConfirmed(true);
-        clearCart();
-      } else {
-        alert('Failed to process order. Please try again.');
-      }
-    } catch (error) {
-      console.error('Payment error:', error);
-      alert('An error occurred. Please try again.');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  if (orderConfirmed) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-12 px-4">
-        <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8 text-center">
-          <div className="mb-6">
-            <svg className="w-16 h-16 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-          </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Order Confirmed!</h2>
-          <p className="text-gray-600 mb-4">
-            Thank you for your order, {customerInfo.name}!
-          </p>
-          <p className="text-gray-600 mb-8">
-            Your order will be ready for pickup on {pickupDetails.date} at {pickupDetails.time}.
-            A confirmation email has been sent to {customerInfo.email}.
-          </p>
-          <button
-            onClick={() => setCurrentPage('menu')}
-            className="bg-amber-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-amber-700 transition-colors"
-          >
-            Return to Menu
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
@@ -168,75 +100,37 @@ const totalAmount = cart?.reduce((sum, item) => sum + (item.price * item.quantit
             </div>
           </div>
 
-          {/* Payment Method Selection & Form */}
+          {/* Stripe Embedded Checkout */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-md p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Choose Payment Method</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Complete Your Payment</h2>
 
-              {/* Payment Method Buttons */}
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                <button
-                  onClick={() => setPaymentMethod('card')}
-                  className={`p-4 border-2 rounded-lg font-semibold transition-all ${
-                    paymentMethod === 'card'
-                      ? 'border-amber-600 bg-amber-50 text-amber-700'
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                >
-                  <svg className="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
-                  </svg>
-                  Pay with Card
-                </button>
-
-                <button
-                  onClick={() => setPaymentMethod('pickup')}
-                  className={`p-4 border-2 rounded-lg font-semibold transition-all ${
-                    paymentMethod === 'pickup'
-                      ? 'border-amber-600 bg-amber-50 text-amber-700'
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                >
-                  <svg className="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                  </svg>
-                  Pay on Pickup
-                </button>
-              </div>
-
-              {/* Stripe Embedded Checkout */}
-              {paymentMethod === 'card' && clientSecret && (
-                <div className="mb-6">
-                  <EmbeddedCheckoutProvider
-                    stripe={stripePromise}
-                    options={{ clientSecret }}
-                  >
-                    <EmbeddedCheckout />
-                  </EmbeddedCheckoutProvider>
+              {loading && (
+                <div className="text-center py-12">
+                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
+                  <p className="mt-4 text-gray-600">Loading secure payment form...</p>
                 </div>
               )}
 
-              {/* Pay on Pickup */}
-              {paymentMethod === 'pickup' && (
-                <div className="space-y-6">
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <p className="text-blue-800 text-sm">
-                      <strong>Pay on Pickup:</strong> You can pay with cash or card when you pick up your order.
-                    </p>
-                  </div>
-
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                  <p className="text-red-800">{error}</p>
                   <button
-                    onClick={handlePayOnPickup}
-                    disabled={isProcessing}
-                    className={`w-full py-4 rounded-lg font-bold text-lg transition-colors ${
-                      isProcessing
-                        ? 'bg-gray-400 cursor-not-allowed'
-                        : 'bg-amber-600 hover:bg-amber-700 text-white'
-                    }`}
+                    onClick={createCheckoutSession}
+                    className="mt-2 text-red-600 hover:text-red-800 font-semibold"
                   >
-                    {isProcessing ? 'Processing...' : 'Confirm Order'}
+                    Try Again
                   </button>
                 </div>
+              )}
+
+              {!loading && !error && clientSecret && (
+                <EmbeddedCheckoutProvider
+                  stripe={stripePromise}
+                  options={{ clientSecret }}
+                >
+                  <EmbeddedCheckout />
+                </EmbeddedCheckoutProvider>
               )}
 
               {/* Back Button */}
