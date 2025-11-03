@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 
-const Order = ({ cartItems, handleUpdateQuantity, handleRemoveFromCart, setCurrentPage, setOrderData }) => {
+const Order = ({ 
+  cartItems, 
+  handleUpdateQuantity, 
+  handleRemoveFromCart, 
+  setCurrentPage, 
+  setOrderData,
+  customerInfo,      // ✅ RECEIVE FROM APP.JSX
+  setCustomerInfo    // ✅ RECEIVE FROM APP.JSX
+}) => {
   const [orderError, setOrderError] = useState('');
-  const [customerInfo, setCustomerInfo] = useState({
-    name: '',
-    email: '',
-    phone: ''
-  });
   const [customerNotes, setCustomerNotes] = useState('');
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
