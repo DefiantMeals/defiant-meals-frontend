@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const Pickup = ({ orderData, setCurrentPage, setOrderData }) => {
+const Pickup = ({ orderData, setCurrentPage, setOrderData, setPickupDetails }) => {
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [availableDates, setAvailableDates] = useState([]);
@@ -183,23 +183,26 @@ const Pickup = ({ orderData, setCurrentPage, setOrderData }) => {
     hours: scheduleLoading ? 'Loading...' : 'Mon: 07:00-18:00, Sat: 08:00-12:00'
   };
 
-  const continueToPayment = () => {
-    if (!selectedDate || !selectedTime) {
-      alert('Please select both a date and time for pickup.');
-      return;
-    }
+const continueToPayment = () => {
+  if (!selectedDate || !selectedTime) {
+    alert('Please select both a date and time for pickup.');
+    return;
+  }
 
-    if (dateValidation && !dateValidation.isValid) {
-      alert('The selected pickup date is no longer available. Please choose another date.');
-      return;
-    }
+  if (dateValidation && !dateValidation.isValid) {
+    alert('The selected pickup date is no longer available. Please choose another date.');
+    return;
+  }
 
-    // Save pickup details to order data
-    const updatedOrderData = {
-      ...orderData,
-      pickupDate: selectedDate,
-      pickupTime: selectedTime
-    };
+  // Save pickup details using the dedicated setter
+  setPickupDetails({
+    date: selectedDate,
+    time: selectedTime
+  });
+
+  // Navigate to payment
+  setCurrentPage('payment');
+};
 
     setOrderData(updatedOrderData);
     setCurrentPage('payment');
