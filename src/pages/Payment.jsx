@@ -27,14 +27,44 @@ const Payment = ({ cart, customerInfo, pickupDetails, setCurrentPage, clearCart 
     );
   }
 
-  // Create Stripe checkout session when component mounts
+  // Validation check for customer info and pickup details
   useEffect(() => {
+    console.log('🔍 Payment page loaded with data:');
+    console.log('Cart:', cart);
+    console.log('Customer Info:', customerInfo);
+    console.log('Pickup Details:', pickupDetails);
+
+    // Verify we have all required data before creating checkout session
+    if (!customerInfo?.name || !customerInfo?.email || !customerInfo?.phone) {
+      console.error('❌ Missing customer info, redirecting to Order page');
+      setError('Please complete your customer information');
+      setLoading(false);
+      setTimeout(() => setCurrentPage('order'), 2000);
+      return;
+    }
+
+    if (!pickupDetails?.date || !pickupDetails?.time) {
+      console.error('❌ Missing pickup details, redirecting to Pickup page');
+      setError('Please select a pickup date and time');
+      setLoading(false);
+      setTimeout(() => setCurrentPage('pickup'), 2000);
+      return;
+    }
+
+    // All data is valid, create checkout session
     createCheckoutSession();
   }, []);
 
   const createCheckoutSession = async () => {
     try {
       setLoading(true);
+      
+      console.log('📤 Creating checkout session with data:');
+      console.log('Cart:', cart);
+      console.log('Customer Info:', customerInfo);
+      console.log('Pickup Details:', pickupDetails);
+      console.log('Total Amount:', totalAmount);
+
       const response = await fetch('https://defiant-meals-backend.onrender.com/api/payments/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -49,14 +79,16 @@ const Payment = ({ cart, customerInfo, pickupDetails, setCurrentPage, clearCart 
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create checkout session');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create checkout session');
       }
 
       const data = await response.json();
+      console.log('✅ Checkout session created:', data.clientSecret);
       setClientSecret(data.clientSecret);
       setLoading(false);
     } catch (error) {
-      console.error('Error creating checkout session:', error);
+      console.error('❌ Error creating checkout session:', error);
       setError('Failed to initialize payment. Please try again.');
       setLoading(false);
     }
@@ -92,10 +124,10 @@ const Payment = ({ cart, customerInfo, pickupDetails, setCurrentPage, clearCart 
               </div>
 
               <div className="border-t pt-4 space-y-2 text-sm text-gray-600">
-                <p><strong>Name:</strong> {customerInfo.name}</p>
-                <p><strong>Email:</strong> {customerInfo.email}</p>
-                <p><strong>Phone:</strong> {customerInfo.phone}</p>
-                <p><strong>Pickup:</strong> {pickupDetails.date} at {pickupDetails.time}</p>
+                <p><strong>Name:</strong> {customerInfo?.name || 'Not provided'}</p>
+                <p><strong>Email:</strong> {customerInfo?.email || 'Not provided'}</p>
+                <p><strong>Phone:</strong> {customerInfo?.phone || 'Not provided'}</p>
+                <p><strong>Pickup:</strong> {pickupDetails?.date || 'Not selected'} at {pickupDetails?.time || 'Not selected'}</p>
               </div>
             </div>
           </div>
@@ -116,10 +148,10 @@ const Payment = ({ cart, customerInfo, pickupDetails, setCurrentPage, clearCart 
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
                   <p className="text-red-800">{error}</p>
                   <button
-                    onClick={createCheckoutSession}
+                    onClick={() => setCurrentPage('order')}
                     className="mt-2 text-red-600 hover:text-red-800 font-semibold"
                   >
-                    Try Again
+                    Go Back
                   </button>
                 </div>
               )}
