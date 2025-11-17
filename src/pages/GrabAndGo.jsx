@@ -75,11 +75,23 @@ const GrabAndGo = () => {
     setCheckoutLoading(true);
 
     try {
+      // Format cart items to match backend expectations
+      const formattedItems = cart.map(item => ({
+        menuItemId: item._id,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price
+      }));
+
       const response = await fetch(`${API_BASE_URL}/api/grab-and-go/create-checkout-session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: cart })
+        body: JSON.stringify({ items: formattedItems })
       });
+
+      if (!response.ok) {
+        throw new Error('Failed to create checkout session');
+      }
 
       const { sessionId } = await response.json();
       
