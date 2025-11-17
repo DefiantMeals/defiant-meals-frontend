@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import Navbar from './components/Navbar';
@@ -10,6 +11,7 @@ import Pickup from './pages/Pickup';
 import Payment from './pages/Payment';
 import Contact from './pages/Contact';
 import Admin from './pages/Admin';
+import GrabAndGo from './pages/GrabAndGo';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
@@ -111,15 +113,15 @@ const App = () => {
 
   const renderPage = () => {
     switch(currentPage) {
-        case 'home':
-          return <Home setCurrentPage={setCurrentPage} />;
+      case 'home':
+        return <Home setCurrentPage={setCurrentPage} />;
       case 'menu':
-    return <Menu 
-      handleAddToCart={handleAddToCart}
-      cartItems={cartItems}
-      updateCartItemQuantity={handleUpdateQuantity}
-      removeFromCart={handleRemoveFromCart}
-    />;
+        return <Menu 
+          handleAddToCart={handleAddToCart}
+          cartItems={cartItems}
+          updateCartItemQuantity={handleUpdateQuantity}
+          removeFromCart={handleRemoveFromCart}
+        />;
       case 'order':
         return <Order 
           cartItems={cartItems}
@@ -159,13 +161,26 @@ const App = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar setCurrentPage={setCurrentPage} currentPage={currentPage} />
-      <main className="flex-grow">
-        {renderPage()}
-      </main>
-      <Footer setCurrentPage={setCurrentPage} />
-    </div>
+    <Router>
+      <Routes>
+        {/* Grab and Go - Standalone route with NO navbar/footer */}
+        <Route path="/grab-and-go" element={<GrabAndGo />} />
+        
+        {/* All other routes - Use existing page state system */}
+        <Route 
+          path="/*" 
+          element={
+            <div className="min-h-screen flex flex-col">
+              <Navbar setCurrentPage={setCurrentPage} currentPage={currentPage} />
+              <main className="flex-grow">
+                {renderPage()}
+              </main>
+              <Footer setCurrentPage={setCurrentPage} />
+            </div>
+          } 
+        />
+      </Routes>
+    </Router>
   );
 };
 
