@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
 
 const API_BASE_URL = 'https://defiant-meals-backend.onrender.com';
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 const GrabAndGo = () => {
   const [menuItems, setMenuItems] = useState([]);
@@ -93,19 +91,14 @@ const GrabAndGo = () => {
         throw new Error('Failed to create checkout session');
       }
 
-      const { sessionId } = await response.json();
+      const { url } = await response.json();
       
-      const stripe = await stripePromise;
-      const { error } = await stripe.redirectToCheckout({ sessionId });
+      // Redirect directly to Stripe checkout URL
+      window.location.href = url;
 
-      if (error) {
-        console.error('Stripe checkout error:', error);
-        alert('Failed to proceed to checkout. Please try again.');
-      }
     } catch (error) {
       console.error('Checkout error:', error);
       alert('Failed to proceed to checkout. Please try again.');
-    } finally {
       setCheckoutLoading(false);
     }
   };
