@@ -689,7 +689,7 @@ const Admin = () => {
               </div>
             )}
 
-           {/* Menu Items List */}
+            {/* Menu Items List */}
             {loading ? (
               <p className="text-center text-gray-500">Loading...</p>
             ) : (
@@ -881,10 +881,10 @@ const Admin = () => {
                     <div className="flex justify-between items-start mb-4">
                       <div>
                         <h3 className="text-lg font-bold">{order.customerName}</h3>
-                        <p className="text-sm text-gray-600">{order.email}</p>
-                        <p className="text-sm text-gray-600">{order.phone}</p>
+                        <p className="text-sm text-gray-600">{order.customerEmail}</p>
+                        <p className="text-sm text-gray-600">{order.customerPhone}</p>
                         <p className="text-sm text-gray-600 mt-2">
-                          Pickup: {order.pickupDay} at {order.pickupLocation}
+                          Pickup: {new Date(order.pickupDate).toLocaleDateString()} at {order.pickupTime}
                         </p>
                       </div>
                       <div className="text-right">
