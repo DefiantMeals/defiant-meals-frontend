@@ -604,7 +604,7 @@ const Admin = () => {
                     <div className="space-y-1">
                       {formData.flavorOptions.map((flavor, index) => (
                         <div key={index} className="flex justify-between items-center bg-gray-50 p-2 rounded">
-                          <span>{flavor.name} {flavor.price > 0 && `(+$${flavor.price.toFixed(2)})`}</span>
+                          <span>{flavor.name} {flavor.price > 0 && `(+$${(parseFloat(flavor.price) || 0).toFixed(2)})`}</span>
                           <button
                             type="button"
                             onClick={() => removeFlavor(index)}
@@ -647,7 +647,7 @@ const Admin = () => {
                     <div className="space-y-1">
                       {formData.addonOptions.map((addon, index) => (
                         <div key={index} className="flex justify-between items-center bg-gray-50 p-2 rounded">
-                          <span>{addon.name} (+${addon.price.toFixed(2)})</span>
+                          <span>{addon.name} (+${(parseFloat(addon.price) || 0).toFixed(2)})</span>
                           <button
                             type="button"
                             onClick={() => removeAddon(index)}
@@ -706,7 +706,7 @@ const Admin = () => {
                           </span>
                         )}
                       </div>
-                      <span className="text-xl font-bold text-blue-600">${item.price}</span>
+                      <span className="text-xl font-bold text-blue-600">${(parseFloat(item.price) || 0).toFixed(2)}</span>
                     </div>
                     <p className="text-gray-700 mb-3">{item.description}</p>
                     {item.isGrabAndGo && (
@@ -878,7 +878,7 @@ const Admin = () => {
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-2xl font-bold text-blue-600">${order.totalAmount.toFixed(2)}</p>
+                        <p className="text-2xl font-bold text-blue-600">${(parseFloat(order.totalAmount) || 0).toFixed(2)}</p>
                         <p className="text-sm text-gray-500">
                           {new Date(order.createdAt).toLocaleDateString()}
                         </p>
@@ -889,7 +889,7 @@ const Admin = () => {
                       <h4 className="font-semibold mb-2">Items:</h4>
                       {order.items.map((item, index) => (
                         <div key={index} className="text-sm text-gray-700 mb-1">
-                          {item.quantity}x {item.name} - ${item.price.toFixed(2)}
+                          {item.quantity}x {item.name} - ${(parseFloat(item.price) || 0).toFixed(2)}
                           {item.customizations && (
                             <span className="text-gray-500 ml-2">
                               ({item.customizations.flavor && `Flavor: ${item.customizations.flavor}`}
@@ -943,7 +943,7 @@ const Admin = () => {
                       <div key={item._id} className="flex items-center justify-between border-b pb-4">
                         <div className="flex-1">
                           <h4 className="font-semibold">{item.name}</h4>
-                          <p className="text-sm text-gray-600">${item.price.toFixed(2)}</p>
+                          <p className="text-sm text-gray-600">${(parseFloat(item.price) || 0).toFixed(2)}</p>
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="flex items-center gap-2">
@@ -997,7 +997,7 @@ const Admin = () => {
                         </div>
                         <div className="text-right">
                           <p className="text-2xl font-bold text-green-600">
-                            ${order.totalAmount.toFixed(2)}
+                            ${(parseFloat(order.totalAmount) || 0).toFixed(2)}
                           </p>
                           <span className={`inline-block px-3 py-1 rounded-full text-sm mt-2 ${
                             order.status === 'completed' ? 'bg-green-100 text-green-800' :
@@ -1013,7 +1013,7 @@ const Admin = () => {
                         <h5 className="font-semibold mb-2">Items:</h5>
                         {order.items.map((item, index) => (
                           <div key={index} className="text-sm text-gray-700 mb-1">
-                            {item.quantity}x {item.name} - ${item.price.toFixed(2)}
+                            {item.quantity}x {item.name} - ${(parseFloat(item.price) || 0).toFixed(2)}
                           </div>
                         ))}
                       </div>
