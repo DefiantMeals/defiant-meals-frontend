@@ -67,19 +67,19 @@ const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeF
     });
   };
 
-  // Calculate total price including add-ons
+  // Calculate total price including add-ons - with null checks
   const calculateItemPrice = (basePrice, itemId) => {
     const options = selectedItemOptions[itemId] || {};
-    let totalPrice = parseFloat(basePrice);
+    let totalPrice = parseFloat(basePrice) || 0;
     
     // Add flavor price if it has one
     if (options.selectedFlavor && options.selectedFlavor.price) {
-      totalPrice += parseFloat(options.selectedFlavor.price);
+      totalPrice += parseFloat(options.selectedFlavor.price) || 0;
     }
     
     // Add addon prices
     if (options.selectedAddons) {
-      totalPrice += options.selectedAddons.reduce((sum, addon) => sum + parseFloat(addon.price || 0), 0);
+      totalPrice += options.selectedAddons.reduce((sum, addon) => sum + (parseFloat(addon.price) || 0), 0);
     }
     
     return totalPrice;
@@ -98,7 +98,7 @@ const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeF
       originalId: item._id,
       name: item.name,
       price: totalPrice,
-      basePrice: parseFloat(item.price),
+      basePrice: parseFloat(item.price) || 0,
       description: item.description,
       category: item.category,
       calories: item.calories,
@@ -273,7 +273,7 @@ const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeF
                           <option value="">Select flavor...</option>
                           {item.flavorOptions.map(flavor => (
                             <option key={flavor.name} value={flavor.name}>
-                              {flavor.name} {flavor.price > 0 && `(+$${flavor.price.toFixed(2)})`}
+                              {flavor.name} {flavor.price > 0 && `(+$${(parseFloat(flavor.price) || 0).toFixed(2)})`}
                             </option>
                           ))}
                         </select>
@@ -296,7 +296,7 @@ const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeF
                                 onChange={(e) => handleAddonChange(item._id, addon, e.target.checked)}
                               />
                               <span className="ml-2 text-sm">
-                                {addon.name} (+${addon.price.toFixed(2)})
+                                {addon.name} (+${(parseFloat(addon.price) || 0).toFixed(2)})
                               </span>
                             </label>
                           ))}
@@ -338,9 +338,9 @@ const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeF
                         <span className="text-2xl font-bold text-blue-600">
                           ${itemPrice.toFixed(2)}
                         </span>
-                        {itemPrice !== parseFloat(item.price) && (
+                        {itemPrice !== (parseFloat(item.price) || 0) && (
                           <div className="text-sm text-gray-500">
-                            Base: ${parseFloat(item.price).toFixed(2)}
+                            Base: ${(parseFloat(item.price) || 0).toFixed(2)}
                           </div>
                         )}
                       </div>
