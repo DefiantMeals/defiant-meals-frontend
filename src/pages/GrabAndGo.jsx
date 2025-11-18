@@ -8,6 +8,7 @@ const GrabAndGo = () => {
   const [loading, setLoading] = useState(true);
   const [showCart, setShowCart] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [customerEmail, setCustomerEmail] = useState('');
 
   // Fetch Grab & Go menu items
   useEffect(() => {
@@ -70,6 +71,11 @@ const GrabAndGo = () => {
       return;
     }
 
+    if (!customerEmail || !customerEmail.includes('@')) {
+      alert('Please enter a valid email address to receive your order confirmation.');
+      return;
+    }
+
     setCheckoutLoading(true);
 
     try {
@@ -84,7 +90,10 @@ const GrabAndGo = () => {
       const response = await fetch(`${API_BASE_URL}/api/grab-and-go/create-checkout-session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: formattedItems })
+        body: JSON.stringify({ 
+          items: formattedItems,
+          customerEmail: customerEmail
+        })
       });
 
       if (!response.ok) {
@@ -331,6 +340,21 @@ const GrabAndGo = () => {
               {/* Cart Footer */}
               {cart.length > 0 && (
                 <div className="border-t p-6 bg-gray-50">
+                  {/* Email Input */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Email Address (for order confirmation) *
+                    </label>
+                    <input
+                      type="email"
+                      value={customerEmail}
+                      onChange={(e) => setCustomerEmail(e.target.value)}
+                      placeholder="your@email.com"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-xl font-semibold text-gray-700">Total:</span>
                     <span className="text-3xl font-bold text-green-600">
@@ -339,7 +363,7 @@ const GrabAndGo = () => {
                   </div>
                   <button
                     onClick={handleCheckout}
-                    disabled={checkoutLoading}
+                    disabled={checkoutLoading || !customerEmail}
                     className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-lg font-bold text-lg transition-all duration-300 active:scale-95 disabled:bg-gray-400 disabled:cursor-not-allowed"
                   >
                     {checkoutLoading ? 'Processing...' : 'Proceed to Payment'}
