@@ -689,13 +689,23 @@ const Admin = () => {
               </div>
             )}
 
-            {/* Menu Items List */}
+           {/* Menu Items List */}
             {loading ? (
               <p className="text-center text-gray-500">Loading...</p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {menuItems.map(item => (
                   <div key={item._id} className="bg-white p-6 rounded-lg shadow-md">
+                    {item.imageUrl && (
+                      <img
+                        src={item.imageUrl}
+                        alt={item.name}
+                        className="w-full h-32 object-cover rounded-t-lg mb-3"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                    )}
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <h3 className="text-lg font-bold">{item.name}</h3>
