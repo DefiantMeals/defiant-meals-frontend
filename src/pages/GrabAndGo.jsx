@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 
 const API_BASE_URL = 'https://defiant-meals-backend.onrender.com';
-const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLIC_KEY);
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 const GrabAndGo = () => {
   const [menuItems, setMenuItems] = useState([]);
