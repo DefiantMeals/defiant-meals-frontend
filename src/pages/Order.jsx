@@ -276,11 +276,11 @@ const Order = ({
               
               {/* Pickup Info */}
               <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-semibold mb-2">Pickup Information</h3>
+                <h3 className="font-semibold mb-2">Enjoy your selection!</h3>
                 <div className="text-sm text-gray-600 space-y-1">
-                  <p>📦 Order ready for pickup in 15-25 minutes</p>
-                  <p>📍 123 Main Street, Your City</p>
-                  <p>📞 (555) 123-4567</p>
+                  <p></p>
+                  <p></p>
+                  <p></p>
                 </div>
               </div>
             </div>
