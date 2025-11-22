@@ -29,7 +29,8 @@ const Admin = () => {
     flavorOptions: [],
     addonOptions: [],
     isGrabAndGo: false,
-    inventory: 0
+    inventory: 0,
+    isFood: true // Default to food item
   });
 
   // Form states for categories
@@ -160,7 +161,8 @@ const Admin = () => {
       flavorOptions: item.flavorOptions || [],
       addonOptions: item.addonOptions || [],
       isGrabAndGo: item.isGrabAndGo || false,
-      inventory: item.inventory || 0
+      inventory: item.inventory || 0,
+      isFood: item.isFood !== undefined ? item.isFood : true // Handle existing items without isFood field
     });
     setShowAddForm(true);
   };
@@ -200,7 +202,8 @@ const Admin = () => {
       flavorOptions: [],
       addonOptions: [],
       isGrabAndGo: false,
-      inventory: 0
+      inventory: 0,
+      isFood: true
     });
     setEditingItem(null);
     setShowAddForm(false);
@@ -542,6 +545,41 @@ const Admin = () => {
                     </div>
                   </div>
 
+                  {/* Tax Classification Section */}
+                  <div className="border-t pt-4">
+                    <label className="block text-sm font-medium mb-2">Tax Classification *</label>
+                    <div className="space-y-2">
+                      <label className="flex items-center space-x-3 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="isFood"
+                          checked={formData.isFood === true}
+                          onChange={() => setFormData({...formData, isFood: true})}
+                          className="w-4 h-4 text-blue-600"
+                          required
+                        />
+                        <span className="text-sm">
+                          <span className="font-semibold">Food Item (3% tax)</span>
+                          <span className="text-gray-500 ml-2">- Meals, meal prep items, snacks</span>
+                        </span>
+                      </label>
+                      <label className="flex items-center space-x-3 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="isFood"
+                          checked={formData.isFood === false}
+                          onChange={() => setFormData({...formData, isFood: false})}
+                          className="w-4 h-4 text-blue-600"
+                          required
+                        />
+                        <span className="text-sm">
+                          <span className="font-semibold">Non-Food/Drink (9.5% tax)</span>
+                          <span className="text-gray-500 ml-2">- Beverages, drinks, supplements</span>
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
                   {/* Grab & Go Section */}
                   <div className="border-t pt-4">
                     <div className="flex items-center space-x-4 mb-4">
@@ -713,6 +751,13 @@ const Admin = () => {
                         {item.isGrabAndGo && (
                           <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded mt-1">
                             Grab & Go
+                          </span>
+                        )}
+                        {item.isFood !== undefined && (
+                          <span className={`inline-block text-xs px-2 py-1 rounded mt-1 ml-1 ${
+                            item.isFood ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                          }`}>
+                            {item.isFood ? '3% tax' : '9.5% tax'}
                           </span>
                         )}
                       </div>

@@ -1,0 +1,30 @@
+[33mafbc068[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Add images to admin panel menu items cards
+[33mfa8fea9[m Fix: Handle undefined prices in admin panel
+[33m4070ced[m Fix: Handle undefined prices in menu items
+[33m3fdc765[m Fix Stripe checkout to use direct URL redirect
+[33m6bdcc35[m Fix Stripe environment variables
+[33m6f9a957[m Fix: Send menuItemId in Grab and Go checkout request
+[33m02a67a4[m Add Grab and Go feature - admin management and customer page
+[33maf275ef[m Fix Order.jsx to use customerInfo props from App.jsx
+[33ma4e586c[m Fix Pickup.jsx syntax error - complete rewrite
+[33m114e301[m Fix pickup details persistence using setPickupDetails prop
+[33m03125b1[m Fix customer info and pickup details persistence in Payment page
+[33ma197682[m Update Stripe test key
+[33maf873a7[m Replace all payment options with Stripe embedded checkout only
+[33m70a13f2[m Fix cart persistence between Pickup and Payment pages
+[33me7730d4[m Fix cart undefined error in Payment page
+[33mc3079eb[m Add embedded Stripe checkout to Payment page
+[33mf2de759[m Fix Stripe env variable for Vite
+[33m260e67d[m Activate Stripe payment integration
+[33mcf4d16b[m Add Stripe payment UI (commented out, ready to activate)
+[33m8a89592[m Add FB link to footer and comment out Instagram/Twitter until accounts created
+[33m2868729[m Add Facebook page link to footer social icon
+[33mbdf2202[m Add menu item breakdown to order summary exports
+[33md1bd051[m Add export functionality to order summary report buttons
+[33m98320af[m Fix incomplete Pickup.jsx file
+[33m7cda94e[m Add real-time pickup date validation with backend cutoff checking
+[33m12d7967[m Fix nutritional display - remove duplicate divs
+[33m92446b6[m Add styled nutritional information boxes
+[33m1ce4678[m Add fats and carbs input fields to admin menu form
+[33m067b7fa[m Add fats and carbs fields to admin menu management
+[33m164affe[m Add sessionStorage persistence and dynamic schedule-based time slots
