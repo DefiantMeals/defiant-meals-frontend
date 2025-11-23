@@ -88,7 +88,14 @@ const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeF
   // Enhanced add to cart with options
   const handleAddToCartWithOptions = (item) => {
     const options = selectedItemOptions[item._id] || {};
-    const totalPrice = calculateItemPrice(item.price, item._id);
+    let totalPrice = calculateItemPrice(item.price, item._id);
+    
+    // Calculate tax based on isFood field
+    // 3% for food items (isFood === true or undefined/null)
+    // 9.5% for non-food items (isFood === false)
+    const taxRate = item.isFood === false ? 0.095 : 0.03;
+    const taxAmount = totalPrice * taxRate;
+    totalPrice = totalPrice + taxAmount; // Add tax to get final price with tax included
     
     // Create a unique identifier for cart items with different customizations
     const customizationId = `${item._id}_${options.selectedFlavor?.name || 'no-flavor'}_${(options.selectedAddons || []).map(a => a.name).sort().join('_')}`;
@@ -97,7 +104,7 @@ const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeF
       id: customizationId,
       originalId: item._id,
       name: item.name,
-      price: totalPrice,
+      price: totalPrice, // This is now the tax-inclusive price
       basePrice: parseFloat(item.price) || 0,
       description: item.description,
       category: item.category,
