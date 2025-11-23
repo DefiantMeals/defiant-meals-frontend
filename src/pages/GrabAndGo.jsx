@@ -9,7 +9,6 @@ const GrabAndGo = () => {
   const [showCart, setShowCart] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [customerEmail, setCustomerEmail] = useState('');
-  const [imageErrors, setImageErrors] = useState({});
 
   // Fetch Grab & Go menu items
   useEffect(() => {
@@ -26,14 +25,6 @@ const GrabAndGo = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Handle image load error
-  const handleImageError = (itemId) => {
-    setImageErrors(prev => ({
-      ...prev,
-      [itemId]: true
-    }));
   };
 
   // Add item to cart
@@ -169,107 +160,106 @@ const GrabAndGo = () => {
 
         {!loading && menuItems.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {menuItems.map(item => {
-              const showImage = item.imageUrl && !imageErrors[item._id];
-              
-              return (
-                <div 
-                  key={item._id} 
-                  className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border-2 border-transparent hover:border-green-300"
-                >
-                  {/* Image */}
-                  {showImage ? (
-                    <div className="relative overflow-hidden h-48">
-                      <img
-                        src={item.imageUrl}
-                        alt={item.name}
-                        className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
-                        onError={() => handleImageError(item._id)}
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-full h-48 bg-gradient-to-br from-green-100 to-blue-100 flex items-center justify-center">
-                      <span className="text-green-600 text-lg font-medium">🍽️ Fresh Meal</span>
-                    </div>
-                  )}
+            {menuItems.map(item => (
+              <div 
+                key={item._id} 
+                className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border-2 border-transparent hover:border-green-300"
+              >
+                {/* Image */}
+                {item.imageUrl ? (
+                  <div className="relative overflow-hidden h-48">
+                    <img
+                      src={item.imageUrl}
+                      alt={item.name}
+                      className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.parentNode.innerHTML = '<div class="w-full h-48 bg-gradient-to-br from-green-100 to-blue-100 flex items-center justify-center"><span class="text-green-600 text-lg font-medium">🍽️ Fresh Meal</span></div>';
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="w-full h-48 bg-gradient-to-br from-green-100 to-blue-100 flex items-center justify-center">
+                    <span className="text-green-600 text-lg font-medium">🍽️ Fresh Meal</span>
+                  </div>
+                )}
 
-                  {/* Content */}
-                  <div className="p-6">
-                    <div className="flex justify-between items-start mb-3">
-                      <h3 className="text-xl font-bold text-gray-800">{item.name}</h3>
-                      <span className="text-2xl font-bold text-green-600">
-                        ${item.price.toFixed(2)}
-                      </span>
-                    </div>
+                {/* Content */}
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="text-xl font-bold text-gray-800">{item.name}</h3>
+                    <span className="text-2xl font-bold text-green-600">
+                      ${item.price.toFixed(2)}
+                    </span>
+                  </div>
 
-                    <p className="text-gray-600 mb-4 line-clamp-2">{item.description}</p>
+                  <p className="text-gray-600 mb-4 line-clamp-2">{item.description}</p>
 
-                    {/* Nutritional Info */}
-                    {(item.protein || item.carbs || item.fats || item.calories) && (
-                      <div className="mb-4 bg-gray-50 rounded-lg p-3">
-                        <div className="grid grid-cols-3 gap-2 text-center text-sm">
-                          {item.protein && (
-                            <div>
-                              <div className="text-xs text-gray-500 mb-1">Protein</div>
-                              <div className="font-semibold text-blue-600">{item.protein}</div>
-                            </div>
-                          )}
-                          {item.carbs && (
-                            <div>
-                              <div className="text-xs text-gray-500 mb-1">Carbs</div>
-                              <div className="font-semibold text-green-600">{item.carbs}</div>
-                            </div>
-                          )}
-                          {item.fats && (
-                            <div>
-                              <div className="text-xs text-gray-500 mb-1">Fats</div>
-                              <div className="font-semibold text-orange-600">{item.fats}</div>
-                            </div>
-                          )}
-                        </div>
-                        {item.calories && (
-                          <div className="text-center mt-2 text-sm text-gray-600">
-                            {item.calories} cal
+                  {/* Nutritional Info */}
+                  {(item.protein || item.carbs || item.fats || item.calories) && (
+                    <div className="mb-4 bg-gray-50 rounded-lg p-3">
+                      <div className="grid grid-cols-3 gap-2 text-center text-sm">
+                        {item.protein && (
+                          <div>
+                            <div className="text-xs text-gray-500 mb-1">Protein</div>
+                            <div className="font-semibold text-blue-600">{item.protein}</div>
+                          </div>
+                        )}
+                        {item.carbs && (
+                          <div>
+                            <div className="text-xs text-gray-500 mb-1">Carbs</div>
+                            <div className="font-semibold text-green-600">{item.carbs}</div>
+                          </div>
+                        )}
+                        {item.fats && (
+                          <div>
+                            <div className="text-xs text-gray-500 mb-1">Fats</div>
+                            <div className="font-semibold text-orange-600">{item.fats}</div>
                           </div>
                         )}
                       </div>
-                    )}
-
-                    {/* Stock Indicator */}
-                    <div className="mb-4">
-                      {item.inventory > 0 ? (
-                        <span className="inline-flex items-center text-sm text-green-600 font-medium">
-                          <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
-                          {item.inventory} available
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center text-sm text-red-600 font-medium">
-                          <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                          </svg>
-                          Out of stock
-                        </span>
+                      {item.calories && (
+                        <div className="text-center mt-2 text-sm text-gray-600">
+                          {item.calories} cal
+                        </div>
                       )}
                     </div>
+                  )}
 
-                    {/* Add to Cart Button */}
-                    <button
-                      onClick={() => addToCart(item)}
-                      disabled={item.inventory <= 0}
-                      className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-300 ${
-                        item.inventory > 0
-                          ? 'bg-green-600 hover:bg-green-700 text-white active:scale-95 hover:shadow-lg'
-                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      }`}
-                    >
-                      {item.inventory > 0 ? 'Add to Cart' : 'Out of Stock'}
-                    </button>
+                  {/* Stock Indicator */}
+                  <div className="mb-4">
+                    {item.inventory > 0 ? (
+                      <span className="inline-flex items-center text-sm text-green-600 font-medium">
+                        <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        {item.inventory} available
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center text-sm text-red-600 font-medium">
+                        <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                        Out of stock
+                      </span>
+                    )}
                   </div>
+
+                  {/* Add to Cart Button */}
+                  <button
+                    onClick={() => addToCart(item)}
+                    disabled={item.inventory <= 0}
+                    className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-300 ${
+                      item.inventory > 0
+                        ? 'bg-green-600 hover:bg-green-700 text-white active:scale-95 hover:shadow-lg'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                  >
+                    {item.inventory > 0 ? 'Add to Cart' : 'Out of Stock'}
+                  </button>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         )}
 

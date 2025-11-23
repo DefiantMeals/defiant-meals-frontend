@@ -9,7 +9,6 @@ const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeF
   const [loading, setLoading] = useState(true);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [selectedItemOptions, setSelectedItemOptions] = useState({});
-  const [imageErrors, setImageErrors] = useState({});
 
   // Get count of specific item in cart - use parent cart state
   const getItemCartCount = (itemId) => {
@@ -124,14 +123,6 @@ const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeF
     }));
   };
 
-  // Handle image load error
-  const handleImageError = (itemId) => {
-    setImageErrors(prev => ({
-      ...prev,
-      [itemId]: true
-    }));
-  };
-
   // Fetch categories from database
   useEffect(() => {
     const fetchCategories = async () => {
@@ -234,7 +225,6 @@ const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeF
               const cartCount = getItemCartCount(item._id);
               const itemPrice = calculateItemPrice(item.price, item._id);
               const currentOptions = selectedItemOptions[item._id] || {};
-              const showImage = item.imageUrl && !imageErrors[item._id];
               
               return (
                 <div 
@@ -242,23 +232,28 @@ const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeF
                   className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border-2 border-transparent hover:border-blue-200"
                 >
                   {/* Image Section */}
-                  {showImage ? (
+                  {item.imageUrl && (
                     <div className="relative overflow-hidden">
                       <img
                         src={item.imageUrl}
                         alt={item.name}
                         className="w-full h-48 object-cover hover:scale-110 transition-transform duration-300"
-                        onError={() => handleImageError(item._id)}
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.parentNode.style.display = 'none';
+                        }}
                       />
-                    </div>
-                  ) : (
-                    <div className="w-full h-48 bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-                      <span className="text-blue-600 text-lg font-medium">🍽️ Delicious Meal</span>
                     </div>
                   )}
                   
                   {/* Content Section */}
                   <div className="p-6">
+                    {!item.imageUrl && (
+                      <div className="w-full h-32 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg mb-4 flex items-center justify-center">
+                        <span className="text-blue-600 text-sm font-medium">🍽️ Delicious Meal</span>
+                      </div>
+                    )}
+                    
                     <h3 className="text-xl font-semibold mb-2">{item.name}</h3>
                     <p className="text-gray-600 mb-4">{item.description}</p>
 
