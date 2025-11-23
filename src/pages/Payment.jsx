@@ -10,7 +10,25 @@ const Payment = ({ cart, customerInfo, pickupDetails, setCurrentPage, clearCart 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const totalAmount = cart?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || 0;
+  // Calculate subtotal and tax
+  const calculateTotals = () => {
+    const subtotal = cart?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || 0;
+    
+    // Calculate tax based on isFood field
+    let taxAmount = 0;
+    cart?.forEach(item => {
+      const itemTotal = item.price * item.quantity;
+      // 3% for food items, 9.5% for non-food items
+      const taxRate = item.isFood === false ? 0.095 : 0.03;
+      taxAmount += itemTotal * taxRate;
+    });
+    
+    const total = subtotal + taxAmount;
+    
+    return { subtotal, taxAmount, total };
+  };
+
+  const { subtotal, taxAmount, total } = calculateTotals();
 
   // Safety check for empty cart
   if (!cart || cart.length === 0) {
@@ -33,6 +51,9 @@ const Payment = ({ cart, customerInfo, pickupDetails, setCurrentPage, clearCart 
     console.log('Cart:', cart);
     console.log('Customer Info:', customerInfo);
     console.log('Pickup Details:', pickupDetails);
+    console.log('Subtotal:', subtotal);
+    console.log('Tax:', taxAmount);
+    console.log('Total:', total);
 
     // Verify we have all required data before creating checkout session
     if (!customerInfo?.name || !customerInfo?.email || !customerInfo?.phone) {
@@ -63,7 +84,9 @@ const Payment = ({ cart, customerInfo, pickupDetails, setCurrentPage, clearCart 
       console.log('Cart:', cart);
       console.log('Customer Info:', customerInfo);
       console.log('Pickup Details:', pickupDetails);
-      console.log('Total Amount:', totalAmount);
+      console.log('Subtotal:', subtotal);
+      console.log('Tax Amount:', taxAmount);
+      console.log('Total Amount (with tax):', total);
 
       const response = await fetch('https://defiant-meals-backend.onrender.com/api/payments/create-checkout-session', {
         method: 'POST',
@@ -74,7 +97,9 @@ const Payment = ({ cart, customerInfo, pickupDetails, setCurrentPage, clearCart 
           cart,
           customerInfo,
           pickupDetails,
-          totalAmount,
+          subtotal,
+          taxAmount,
+          totalAmount: total, // Send total WITH tax
         }),
       });
 
@@ -116,10 +141,18 @@ const Payment = ({ cart, customerInfo, pickupDetails, setCurrentPage, clearCart 
                 ))}
               </div>
 
-              <div className="border-t pt-4 mb-4">
-                <div className="flex justify-between text-lg font-bold">
+              <div className="border-t pt-4 mb-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Subtotal:</span>
+                  <span className="font-semibold">${subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Tax:</span>
+                  <span className="font-semibold">${taxAmount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-lg font-bold border-t pt-2">
                   <span>Total:</span>
-                  <span className="text-amber-600">${totalAmount.toFixed(2)}</span>
+                  <span className="text-amber-600">${total.toFixed(2)}</span>
                 </div>
               </div>
 
