@@ -27,7 +27,7 @@ const GrabAndGo = () => {
     }
   };
 
-  // Add item to cart
+  // Add item to cart with tax calculation
   const addToCart = (item) => {
     const existingItem = cart.find(cartItem => cartItem._id === item._id);
     
@@ -38,7 +38,19 @@ const GrabAndGo = () => {
           : cartItem
       ));
     } else {
-      setCart([...cart, { ...item, quantity: 1 }]);
+      // Calculate tax-inclusive price
+      // 3% for food items (isFood === true or undefined/null)
+      // 9.5% for non-food items (isFood === false)
+      const taxRate = item.isFood === false ? 0.095 : 0.03;
+      const taxAmount = item.price * taxRate;
+      const priceWithTax = item.price + taxAmount;
+      
+      setCart([...cart, { 
+        ...item, 
+        basePrice: item.price, // Store original price
+        price: priceWithTax,   // Update price to include tax
+        quantity: 1 
+      }]);
     }
   };
 
@@ -58,7 +70,7 @@ const GrabAndGo = () => {
     setCart(cart.filter(item => item._id !== itemId));
   };
 
-  // Calculate cart total
+  // Calculate cart total (prices already include tax)
   const cartTotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
 
   // Get cart item count
@@ -84,7 +96,7 @@ const GrabAndGo = () => {
         menuItemId: item._id,
         name: item.name,
         quantity: item.quantity,
-        price: item.price
+        price: item.price // This now includes tax
       }));
 
       const response = await fetch(`${API_BASE_URL}/api/grab-and-go/create-checkout-session`, {
@@ -297,6 +309,9 @@ const GrabAndGo = () => {
                         <div className="flex-1">
                           <h3 className="font-semibold text-gray-800">{item.name}</h3>
                           <p className="text-sm text-gray-600">${item.price.toFixed(2)} each</p>
+                          {item.basePrice && (
+                            <p className="text-xs text-gray-500">Base: ${item.basePrice.toFixed(2)}</p>
+                          )}
                         </div>
                         
                         <div className="flex items-center gap-3">
@@ -361,6 +376,7 @@ const GrabAndGo = () => {
                       ${cartTotal.toFixed(2)}
                     </span>
                   </div>
+                  <p className="text-xs text-gray-500 text-center mb-3">Tax included in prices</p>
                   <button
                     onClick={handleCheckout}
                     disabled={checkoutLoading || !customerEmail}
