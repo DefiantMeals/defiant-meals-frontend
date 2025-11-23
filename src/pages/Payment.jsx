@@ -10,25 +10,13 @@ const Payment = ({ cart, customerInfo, pickupDetails, setCurrentPage, clearCart 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Calculate subtotal and tax
-  const calculateTotals = () => {
-    const subtotal = cart?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || 0;
-    
-    // Calculate tax based on isFood field
-    let taxAmount = 0;
-    cart?.forEach(item => {
-      const itemTotal = item.price * item.quantity;
-      // 3% for food items, 9.5% for non-food items
-      const taxRate = item.isFood === false ? 0.095 : 0.03;
-      taxAmount += itemTotal * taxRate;
-    });
-    
-    const total = subtotal + taxAmount;
-    
-    return { subtotal, taxAmount, total };
+  // Calculate total from cart (prices already include tax from Menu.jsx)
+  const calculateTotal = () => {
+    const total = cart?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || 0;
+    return total;
   };
 
-  const { subtotal, taxAmount, total } = calculateTotals();
+  const totalAmount = calculateTotal();
 
   // Safety check for empty cart
   if (!cart || cart.length === 0) {
@@ -51,9 +39,7 @@ const Payment = ({ cart, customerInfo, pickupDetails, setCurrentPage, clearCart 
     console.log('Cart:', cart);
     console.log('Customer Info:', customerInfo);
     console.log('Pickup Details:', pickupDetails);
-    console.log('Subtotal:', subtotal);
-    console.log('Tax:', taxAmount);
-    console.log('Total:', total);
+    console.log('Total Amount (tax already included in cart prices):', totalAmount);
 
     // Verify we have all required data before creating checkout session
     if (!customerInfo?.name || !customerInfo?.email || !customerInfo?.phone) {
@@ -84,9 +70,7 @@ const Payment = ({ cart, customerInfo, pickupDetails, setCurrentPage, clearCart 
       console.log('Cart:', cart);
       console.log('Customer Info:', customerInfo);
       console.log('Pickup Details:', pickupDetails);
-      console.log('Subtotal:', subtotal);
-      console.log('Tax Amount:', taxAmount);
-      console.log('Total Amount (with tax):', total);
+      console.log('Total Amount (tax already included):', totalAmount);
 
       const response = await fetch('https://defiant-meals-backend.onrender.com/api/payments/create-checkout-session', {
         method: 'POST',
@@ -97,9 +81,7 @@ const Payment = ({ cart, customerInfo, pickupDetails, setCurrentPage, clearCart 
           cart,
           customerInfo,
           pickupDetails,
-          subtotal,
-          taxAmount,
-          totalAmount: total, // Send total WITH tax
+          totalAmount, // Cart prices already include tax
         }),
       });
 
@@ -141,22 +123,15 @@ const Payment = ({ cart, customerInfo, pickupDetails, setCurrentPage, clearCart 
                 ))}
               </div>
 
-              <div className="border-t pt-4 mb-4 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Subtotal:</span>
-                  <span className="font-semibold">${subtotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Tax:</span>
-                  <span className="font-semibold">${taxAmount.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-lg font-bold border-t pt-2">
+              <div className="border-t pt-4 space-y-2">
+                <div className="flex justify-between text-lg font-bold">
                   <span>Total:</span>
-                  <span className="text-amber-600">${total.toFixed(2)}</span>
+                  <span className="text-amber-600">${totalAmount.toFixed(2)}</span>
                 </div>
+                <p className="text-xs text-gray-500 italic">Tax included in prices</p>
               </div>
 
-              <div className="border-t pt-4 space-y-2 text-sm text-gray-600">
+              <div className="border-t pt-4 mt-4 space-y-2 text-sm text-gray-600">
                 <p><strong>Name:</strong> {customerInfo?.name || 'Not provided'}</p>
                 <p><strong>Email:</strong> {customerInfo?.email || 'Not provided'}</p>
                 <p><strong>Phone:</strong> {customerInfo?.phone || 'Not provided'}</p>
