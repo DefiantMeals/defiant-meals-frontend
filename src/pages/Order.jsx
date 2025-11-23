@@ -12,9 +12,8 @@ const Order = ({
   const [orderError, setOrderError] = useState('');
   const [customerNotes, setCustomerNotes] = useState('');
 
-  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const tax = subtotal * 0.08; // 8% tax
-  const total = subtotal + tax;
+  // Cart prices already include tax - just calculate total
+  const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -45,9 +44,7 @@ const Order = ({
         customizations: item.customizations || {}
       })),
       customerNotes: customerNotes.trim(),
-      subtotal: subtotal,
-      tax: tax,
-      total: total
+      total: total // Cart prices already include tax
     };
 
     setOrderData(orderDetails);
@@ -243,19 +240,12 @@ const Order = ({
               <h2 className="text-2xl font-semibold mb-6">Order Summary</h2>
               
               <div className="space-y-4 mb-6">
-                <div className="flex justify-between">
-                  <span>Subtotal</span>
-                  <span>${subtotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Tax (8%)</span>
-                  <span>${tax.toFixed(2)}</span>
-                </div>
                 <div className="border-t pt-4">
                   <div className="flex justify-between text-xl font-semibold">
                     <span>Total</span>
                     <span>${total.toFixed(2)}</span>
                   </div>
+                  <p className="text-xs text-gray-500 italic mt-2">Tax included in prices</p>
                 </div>
               </div>
               
