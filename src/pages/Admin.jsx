@@ -28,6 +28,7 @@ const Admin = () => {
     imageUrl: '',
     flavorOptions: [],
     addonOptions: [],
+    showOnPreOrder: true,
     isGrabAndGo: false,
     inventory: 0,
     isFood: true // Default to food item
@@ -160,6 +161,7 @@ const Admin = () => {
       imageUrl: item.imageUrl || '',
       flavorOptions: item.flavorOptions || [],
       addonOptions: item.addonOptions || [],
+      showOnPreOrder: item.showOnPreOrder !== false,
       isGrabAndGo: item.isGrabAndGo || false,
       inventory: item.inventory || 0,
       isFood: item.isFood !== undefined ? item.isFood : true // Handle existing items without isFood field
@@ -201,6 +203,7 @@ const Admin = () => {
       imageUrl: '',
       flavorOptions: [],
       addonOptions: [],
+      showOnPreOrder: true,
       isGrabAndGo: false,
       inventory: 0,
       isFood: true
@@ -580,9 +583,21 @@ const Admin = () => {
                     </div>
                   </div>
 
-                  {/* Grab & Go Section */}
+                  {/* Menu Display Controls */}
                   <div className="border-t pt-4">
-                    <div className="flex items-center space-x-4 mb-4">
+                    <h4 className="font-semibold mb-3">Menu Display Settings</h4>
+                    <div className="space-y-3">
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={formData.showOnPreOrder !== false}
+                          onChange={(e) => setFormData({...formData, showOnPreOrder: e.target.checked})}
+                          className="rounded"
+                        />
+                        <span className="font-medium">Show on Pre-Order Menu</span>
+                        <span className="text-sm text-gray-500">(Main menu for scheduled orders)</span>
+                      </label>
+                      
                       <label className="flex items-center space-x-2">
                         <input
                           type="checkbox"
@@ -590,12 +605,13 @@ const Admin = () => {
                           onChange={(e) => setFormData({...formData, isGrabAndGo: e.target.checked})}
                           className="rounded"
                         />
-                        <span className="font-medium">Available for Grab & Go</span>
+                        <span className="font-medium">Show on Grab & Go Menu</span>
+                        <span className="text-sm text-gray-500">(QR code instant purchase)</span>
                       </label>
                     </div>
                     
                     {formData.isGrabAndGo && (
-                      <div>
+                      <div className="mt-4">
                         <label className="block text-sm font-medium mb-1">Inventory Count</label>
                         <input
                           type="number"

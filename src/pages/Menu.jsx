@@ -181,7 +181,7 @@ const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeF
     fetchMenuItems();
   }, []);
 
-  const availableItems = menuItems.filter(item => item.available);
+  const availableItems = menuItems.filter(item => item.available && item.showOnPreOrder !== false);
   const filteredItems = selectedCategory === 'All Items'
     ? availableItems
     : availableItems.filter(item => item.category === selectedCategory);
