@@ -126,10 +126,10 @@ const Pickup = ({ orderData, setCurrentPage, setOrderData, setPickupDetails }) =
 
       const tempSlots = [];
       while (current < end) {
-        tempSlots.push(current.toLocaleTimeString('en-US', { 
-          hour: '2-digit', 
+        tempSlots.push(current.toLocaleTimeString('en-US', {
+          hour: '2-digit',
           minute: '2-digit',
-          hour12: true 
+          hour12: false
         }));
         current.setMinutes(current.getMinutes() + 30);
       }
@@ -340,13 +340,13 @@ const Pickup = ({ orderData, setCurrentPage, setOrderData, setPickupDetails }) =
                         </p>
                         <p className="text-xs text-green-700">
                           <span className="font-semibold">Ordering closes:</span>{' '}
-                          {new Date(dateValidation.orderingDeadline).toLocaleDateString('en-US', { 
+                          {new Date(dateValidation.orderingDeadline).toLocaleDateString('en-US', {
                             weekday: 'long',
-                            month: 'long', 
+                            month: 'long',
                             day: 'numeric',
                             hour: 'numeric',
                             minute: '2-digit',
-                            hour12: true
+                            hour12: false
                           })}
                         </p>
                         <p className="text-xs text-green-600 mt-1">
