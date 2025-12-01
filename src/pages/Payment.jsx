@@ -135,7 +135,7 @@ const Payment = ({ cart, customerInfo, pickupDetails, setCurrentPage, clearCart 
                 <p><strong>Name:</strong> {customerInfo?.name || 'Not provided'}</p>
                 <p><strong>Email:</strong> {customerInfo?.email || 'Not provided'}</p>
                 <p><strong>Phone:</strong> {customerInfo?.phone || 'Not provided'}</p>
-                <p><strong>Pickup:</strong> {pickupDetails?.date || 'Not selected'} at {pickupDetails?.time || 'Not selected'}</p>
+                <p><strong>Pickup:</strong> {pickupDetails?.displayDate || pickupDetails?.date || 'Not selected'} at {pickupDetails?.time || 'Not selected'}</p>
               </div>
             </div>
           </div>

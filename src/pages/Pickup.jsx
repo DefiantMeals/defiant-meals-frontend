@@ -195,8 +195,10 @@ const Pickup = ({ orderData, setCurrentPage, setOrderData, setPickupDetails }) =
     }
 
     // Save pickup details using the dedicated setter
+    const selectedDateObj = availableDates.find(d => d.date === selectedDate);
     setPickupDetails({
       date: selectedDate,
+      displayDate: selectedDateObj?.displayDate || selectedDate,
       time: selectedTime
     });
 
