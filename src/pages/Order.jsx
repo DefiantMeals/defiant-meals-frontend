@@ -159,12 +159,12 @@ const Order = ({
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-2xl font-semibold mb-4">Special Instructions</h2>
               <p className="text-gray-600 text-sm mb-4">
-                Any special requests or notes for the kitchen? (allergies, dietary restrictions, etc.)
+                Any special requests or notes for the kitchen? These are for simple modifications at no extra charge.
               </p>
               <textarea
                 value={customerNotes}
                 onChange={(e) => setCustomerNotes(e.target.value)}
-                placeholder="Enter any special instructions for your order..."
+                placeholder="e.g., no onions, mild spice, nut allergy, no tomatoes..."
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
                 rows="4"
                 maxLength="500"
