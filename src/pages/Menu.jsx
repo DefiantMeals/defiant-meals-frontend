@@ -294,18 +294,33 @@ const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeF
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Add-ons:
                         </label>
-                        <div className="space-y-2 max-h-32 overflow-y-auto">
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
                           {item.addonOptions.map(addon => (
-                            <label key={addon.name} className="flex items-center">
+                            <label key={addon.name} className="flex items-start p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
                               <input
                                 type="checkbox"
-                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-0.5"
                                 checked={(currentOptions.selectedAddons || []).some(a => a.name === addon.name)}
                                 onChange={(e) => handleAddonChange(item._id, addon, e.target.checked)}
                               />
-                              <span className="ml-2 text-sm">
-                                {addon.name} (+${(parseFloat(addon.price) || 0).toFixed(2)})
-                              </span>
+                              <div className="ml-2">
+                                <span className="text-sm font-medium">
+                                  {addon.name} (+${(parseFloat(addon.price) || 0).toFixed(2)})
+                                </span>
+                                {(addon.protein || addon.carbs || addon.fats || addon.calories) && (
+                                  <div className="text-xs text-gray-500 mt-0.5">
+                                    {[
+                                      addon.protein && <span key="p" className="text-blue-600">{addon.protein} P</span>,
+                                      addon.carbs && <span key="c" className="text-green-600">{addon.carbs} C</span>,
+                                      addon.fats && <span key="f" className="text-orange-600">{addon.fats} F</span>,
+                                      addon.calories && <span key="cal">{addon.calories} cal</span>
+                                    ].filter(Boolean).reduce((acc, curr, i) => {
+                                      if (i === 0) return [curr];
+                                      return [...acc, <span key={`sep-${i}`} className="mx-1">|</span>, curr];
+                                    }, [])}
+                                  </div>
+                                )}
+                              </div>
                             </label>
                           ))}
                         </div>

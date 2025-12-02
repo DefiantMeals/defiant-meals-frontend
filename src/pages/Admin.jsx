@@ -44,7 +44,7 @@ const Admin = () => {
 
   // Flavor and addon temporary states
   const [newFlavor, setNewFlavor] = useState({ name: '', price: 0 });
-  const [newAddon, setNewAddon] = useState({ name: '', price: 0 });
+  const [newAddon, setNewAddon] = useState({ name: '', price: 0, protein: '', carbs: '', fats: '', calories: '' });
 
   // Fetch all data on component mount
   useEffect(() => {
@@ -306,9 +306,16 @@ const Admin = () => {
     if (newAddon.name.trim()) {
       setFormData({
         ...formData,
-        addonOptions: [...formData.addonOptions, { ...newAddon, price: parseFloat(newAddon.price) || 0 }]
+        addonOptions: [...formData.addonOptions, {
+          name: newAddon.name,
+          price: parseFloat(newAddon.price) || 0,
+          protein: newAddon.protein || '',
+          carbs: newAddon.carbs || '',
+          fats: newAddon.fats || '',
+          calories: newAddon.calories || ''
+        }]
       });
-      setNewAddon({ name: '', price: 0 });
+      setNewAddon({ name: '', price: 0, protein: '', carbs: '', fats: '', calories: '' });
     }
   };
 
@@ -674,34 +681,78 @@ const Admin = () => {
                   {/* Add-on Options */}
                   <div className="border-t pt-4">
                     <h4 className="font-semibold mb-2">Add-on Options</h4>
-                    <div className="flex gap-2 mb-2">
-                      <input
-                        type="text"
-                        placeholder="Add-on name"
-                        value={newAddon.name}
-                        onChange={(e) => setNewAddon({...newAddon, name: e.target.value})}
-                        className="flex-1 p-2 border rounded-lg"
-                      />
-                      <input
-                        type="number"
-                        step="0.01"
-                        placeholder="Extra cost"
-                        value={newAddon.price}
-                        onChange={(e) => setNewAddon({...newAddon, price: e.target.value})}
-                        className="w-32 p-2 border rounded-lg"
-                      />
-                      <button
-                        type="button"
-                        onClick={addAddon}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-                      >
-                        Add
-                      </button>
+                    <div className="space-y-2 mb-2">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Add-on name"
+                          value={newAddon.name}
+                          onChange={(e) => setNewAddon({...newAddon, name: e.target.value})}
+                          className="flex-1 p-2 border rounded-lg"
+                        />
+                        <input
+                          type="number"
+                          step="0.01"
+                          placeholder="Extra cost"
+                          value={newAddon.price}
+                          onChange={(e) => setNewAddon({...newAddon, price: e.target.value})}
+                          className="w-32 p-2 border rounded-lg"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Protein (e.g. 25g)"
+                          value={newAddon.protein}
+                          onChange={(e) => setNewAddon({...newAddon, protein: e.target.value})}
+                          className="flex-1 p-2 border rounded-lg text-sm"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Carbs (e.g. 10g)"
+                          value={newAddon.carbs}
+                          onChange={(e) => setNewAddon({...newAddon, carbs: e.target.value})}
+                          className="flex-1 p-2 border rounded-lg text-sm"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Fats (e.g. 5g)"
+                          value={newAddon.fats}
+                          onChange={(e) => setNewAddon({...newAddon, fats: e.target.value})}
+                          className="flex-1 p-2 border rounded-lg text-sm"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Calories"
+                          value={newAddon.calories}
+                          onChange={(e) => setNewAddon({...newAddon, calories: e.target.value})}
+                          className="w-24 p-2 border rounded-lg text-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={addAddon}
+                          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                        >
+                          Add
+                        </button>
+                      </div>
                     </div>
                     <div className="space-y-1">
                       {formData.addonOptions.map((addon, index) => (
                         <div key={index} className="flex justify-between items-center bg-gray-50 p-2 rounded">
-                          <span>{addon.name} (+${(parseFloat(addon.price) || 0).toFixed(2)})</span>
+                          <div>
+                            <span className="font-medium">{addon.name} (+${(parseFloat(addon.price) || 0).toFixed(2)})</span>
+                            {(addon.protein || addon.carbs || addon.fats || addon.calories) && (
+                              <span className="text-sm text-gray-500 ml-2">
+                                {[
+                                  addon.protein && `${addon.protein} P`,
+                                  addon.carbs && `${addon.carbs} C`,
+                                  addon.fats && `${addon.fats} F`,
+                                  addon.calories && `${addon.calories} cal`
+                                ].filter(Boolean).join(' | ')}
+                              </span>
+                            )}
+                          </div>
                           <button
                             type="button"
                             onClick={() => removeAddon(index)}
