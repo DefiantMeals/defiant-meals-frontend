@@ -30,38 +30,71 @@ const Pickup = ({ orderData, setCurrentPage, setOrderData, setPickupDetails }) =
     fetchSchedule();
   }, []);
 
-  // Generate available pickup dates (Saturdays and Mondays, 8+ days away)
+  // Generate available pickup dates (exactly 2: next available Saturday and Monday)
   useEffect(() => {
     const generateAvailableDates = () => {
       const dates = [];
-      const today = new Date();
-      
-      // Start checking from 8 days from now
-      const startDate = new Date(today);
-      startDate.setDate(today.getDate() + 8);
-      
-      // Generate next 8 weeks of Saturdays and Mondays
-      for (let i = 0; i < 60; i++) {
-        const checkDate = new Date(startDate);
-        checkDate.setDate(startDate.getDate() + i);
-        
-        const dayOfWeek = checkDate.getDay();
-        
-        // 0 = Sunday, 1 = Monday, 6 = Saturday
-        if (dayOfWeek === 1 || dayOfWeek === 6) {
-          dates.push({
-            date: checkDate.toISOString().split('T')[0],
-            displayDate: checkDate.toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              month: 'long', 
-              day: 'numeric',
-              year: 'numeric'
-            }),
-            dayName: checkDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase()
-          });
-        }
+      const now = new Date();
+
+      // Helper: Get the ordering deadline (midnight 8 days before pickup)
+      // Saturday pickup -> Friday at 23:59:59 (8 days prior)
+      // Monday pickup -> Sunday at 23:59:59 (8 days prior)
+      const getOrderingDeadline = (pickupDate) => {
+        const deadline = new Date(pickupDate);
+        deadline.setDate(deadline.getDate() - 8);
+        deadline.setHours(23, 59, 59, 999);
+        return deadline;
+      };
+
+      // Helper: Find next occurrence of a given day of week
+      const getNextDayOfWeek = (dayOfWeek, startFrom = new Date()) => {
+        const result = new Date(startFrom);
+        result.setHours(0, 0, 0, 0);
+        const currentDay = result.getDay();
+        const daysUntil = (dayOfWeek - currentDay + 7) % 7 || 7;
+        result.setDate(result.getDate() + daysUntil);
+        return result;
+      };
+
+      // Find next available Saturday (that's still within ordering window)
+      let nextSaturday = getNextDayOfWeek(6, now); // 6 = Saturday
+      let saturdayDeadline = getOrderingDeadline(nextSaturday);
+
+      // If deadline has passed, move to next week's Saturday
+      if (now > saturdayDeadline) {
+        nextSaturday.setDate(nextSaturday.getDate() + 7);
       }
-      
+
+      // Find next available Monday (that's still within ordering window)
+      let nextMonday = getNextDayOfWeek(1, now); // 1 = Monday
+      let mondayDeadline = getOrderingDeadline(nextMonday);
+
+      // If deadline has passed, move to next week's Monday
+      if (now > mondayDeadline) {
+        nextMonday.setDate(nextMonday.getDate() + 7);
+      }
+
+      // Create date objects for both days
+      const createDateObj = (date) => ({
+        date: date.toISOString().split('T')[0],
+        displayDate: date.toLocaleDateString('en-US', {
+          weekday: 'long',
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric'
+        }),
+        dayName: date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase()
+      });
+
+      // Add dates in chronological order
+      if (nextSaturday < nextMonday) {
+        dates.push(createDateObj(nextSaturday));
+        dates.push(createDateObj(nextMonday));
+      } else {
+        dates.push(createDateObj(nextMonday));
+        dates.push(createDateObj(nextSaturday));
+      }
+
       setAvailableDates(dates);
     };
 
@@ -222,13 +255,13 @@ const Pickup = ({ orderData, setCurrentPage, setOrderData, setPickupDetails }) =
               </div>
               <div className="ml-3">
                 <p className="text-sm text-yellow-700 font-semibold">
-                  Orders must be placed by noon, 8 days before pickup
+                  Orders must be placed by midnight, 8 days before pickup
                 </p>
                 <p className="text-xs text-yellow-600 mt-1">
-                  • Saturday pickup → Order by Friday noon (8 days before)
+                  • Saturday pickup → Order by Friday 11:59 PM (8 days before)
                 </p>
                 <p className="text-xs text-yellow-600">
-                  • Monday pickup → Order by Sunday noon (8 days before)
+                  • Monday pickup → Order by Sunday 11:59 PM (8 days before)
                 </p>
               </div>
             </div>
