@@ -210,17 +210,21 @@ const GrabAndGo = () => {
                       )}
                     </div>
 
-                    {/* Item Info - Center */}
-                    <div className="flex-1 min-w-0 mr-2">
+                    {/* Item Name */}
+                    <div className="flex-shrink min-w-0 mr-2">
                       <h3 className="text-white font-bold text-sm md:text-base truncate">
                         {item.name}
                       </h3>
-                      {macros && (
+                    </div>
+
+                    {/* Macros */}
+                    {macros && (
+                      <div className="flex-1 min-w-0 mr-2">
                         <p className="text-green-100 text-xs md:text-sm truncate">
                           {macros}
                         </p>
-                      )}
-                    </div>
+                      </div>
+                    )}
 
                     {/* Price */}
                     <div className="flex-shrink-0 text-white font-bold text-sm md:text-base mr-3">
