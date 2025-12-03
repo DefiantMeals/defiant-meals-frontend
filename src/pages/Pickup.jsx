@@ -366,27 +366,27 @@ const Pickup = ({ orderData, setCurrentPage, setOrderData, setPickupDetails }) =
                     </select>
                     
                     {/* Show deadline info when date is selected */}
-                    {selectedDate && dateValidation && dateValidation.isValid && (
-                      <div className="mt-3 p-4 bg-green-50 border border-green-200 rounded-lg">
-                        <p className="text-sm font-semibold text-green-800 mb-1">
-                          ✓ This date is available!
-                        </p>
-                        <p className="text-xs text-green-700">
-                          <span className="font-semibold">Ordering closes:</span>{' '}
-                          {new Date(dateValidation.orderingDeadline).toLocaleDateString('en-US', {
-                            weekday: 'long',
-                            month: 'long',
-                            day: 'numeric',
-                            hour: 'numeric',
-                            minute: '2-digit',
-                            hour12: false
-                          })}
-                        </p>
-                        <p className="text-xs text-green-600 mt-1">
-                          {dateValidation.message}
-                        </p>
-                      </div>
-                    )}
+                    {selectedDate && dateValidation && dateValidation.isValid && (() => {
+                      // Calculate deadline: 8 days before pickup at 23:59
+                      const pickupDate = new Date(selectedDate + 'T00:00:00');
+                      const deadline = new Date(pickupDate);
+                      deadline.setDate(deadline.getDate() - 8);
+                      deadline.setHours(23, 59, 0, 0);
+
+                      const deadlineDay = deadline.toLocaleDateString('en-US', { weekday: 'long' });
+                      const deadlineDate = deadline.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+
+                      return (
+                        <div className="mt-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+                          <p className="text-sm font-semibold text-green-800 mb-1">
+                            This date is available!
+                          </p>
+                          <p className="text-xs text-green-700">
+                            Ordering closes: {deadlineDay}, {deadlineDate} at 23:59
+                          </p>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Time Selection */}
