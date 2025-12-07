@@ -53,7 +53,7 @@ const Footer = ({ setCurrentPage }) => {
           <div>
             <h4 className="text-lg font-semibold mb-4">Contact</h4>
             <ul className="space-y-2 text-gray-300">
-              <li>📞 912 585 5126</li>
+              <li>📞 913-585-5126</li>
               <li>📧 defiantmeals@gmail.com</li>
               <li>📍 1904 Elm St, Eudora KS 66025</li>
             </ul>
