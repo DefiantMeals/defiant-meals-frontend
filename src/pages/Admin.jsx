@@ -982,6 +982,66 @@ const Admin = () => {
         {activeTab === 'orders' && (
           <div>
             <h2 className="text-2xl font-bold mb-6">Order Management</h2>
+
+            {/* Meal Prep Totals Card */}
+            {!loading && orders.length > 0 && (() => {
+              const mealTotals = {};
+              orders.forEach(order => {
+                order.items?.forEach(item => {
+                  const name = item.name || item.menuItemId?.name;
+                  if (name) {
+                    mealTotals[name] = (mealTotals[name] || 0) + item.quantity;
+                  }
+                });
+              });
+              const sortedTotals = Object.entries(mealTotals).sort((a, b) => b[1] - a[1]);
+
+              const exportToCSV = () => {
+                const csvContent = "Menu Item,Quantity\n" +
+                  sortedTotals.map(([name, qty]) => `"${name}",${qty}`).join("\n");
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `meal-prep-totals-${new Date().toISOString().split('T')[0]}.csv`;
+                link.click();
+              };
+
+              return (
+                <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-bold">Meal Prep Totals</h3>
+                    <button
+                      onClick={exportToCSV}
+                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-all flex items-center gap-2"
+                    >
+                      Export Totals to CSV
+                    </button>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-2 px-4">Menu Item</th>
+                          <th className="text-right py-2 px-4">Total Quantity</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sortedTotals.map(([name, quantity]) => (
+                          <tr key={name} className="border-b hover:bg-gray-50">
+                            <td className="py-2 px-4">{name}</td>
+                            <td className="text-right py-2 px-4 font-semibold">{quantity}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-4">
+                    Totals based on {orders.length} order{orders.length !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              );
+            })()}
+
             {loading ? (
               <p className="text-center text-gray-500">Loading...</p>
             ) : orders.length === 0 ? (
