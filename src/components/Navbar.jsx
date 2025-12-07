@@ -6,6 +6,7 @@ const Navbar = ({ setCurrentPage, currentPage }) => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
     { id: 'home', name: 'Home' },
@@ -61,24 +62,39 @@ const Navbar = ({ setCurrentPage, currentPage }) => {
 
   return (
     <>
-      <nav className="bg-blue-600 p-4 shadow-lg">
+      <nav className="bg-blue-600 p-4 shadow-lg relative">
         <div className="container mx-auto flex justify-between items-center">
-          <button 
+          <button
             onClick={() => setCurrentPage('home')}
             className="text-white text-2xl font-bold hover:text-blue-200 transition duration-300"
           >
             Defiant Meals
           </button>
-          
-          <div className="flex items-center space-x-6">
+
+          {/* Hamburger button - mobile only */}
+          <button
+            className="md:hidden p-2 text-white"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {mobileMenuOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
+          </button>
+
+          {/* Desktop nav */}
+          <div className="hidden md:flex items-center space-x-6">
             <ul className="flex space-x-6">
               {navItems.map(item => (
                 <li key={item.id}>
                   <button
                     onClick={() => setCurrentPage(item.id)}
                     className={`text-white px-4 py-2 rounded-lg transition duration-300 ${
-                      currentPage === item.id 
-                        ? 'bg-blue-700 font-semibold' 
+                      currentPage === item.id
+                        ? 'bg-blue-700 font-semibold'
                         : 'hover:bg-blue-500'
                     }`}
                   >
@@ -87,13 +103,13 @@ const Navbar = ({ setCurrentPage, currentPage }) => {
                 </li>
               ))}
             </ul>
-            
+
             {/* Admin button - now shows login popup */}
             <button
               onClick={handleAdminClick}
               className={`text-white px-3 py-1 text-sm rounded transition duration-300 border border-blue-400 ${
-                currentPage === 'admin' 
-                  ? 'bg-blue-700 font-semibold' 
+                currentPage === 'admin'
+                  ? 'bg-blue-700 font-semibold'
                   : 'hover:bg-blue-500'
               }`}
             >
@@ -101,6 +117,43 @@ const Navbar = ({ setCurrentPage, currentPage }) => {
             </button>
           </div>
         </div>
+
+        {/* Mobile dropdown menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden absolute top-full left-0 right-0 bg-blue-700 shadow-lg z-50">
+            <div className="flex flex-col p-4 space-y-3">
+              {navItems.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setCurrentPage(item.id);
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`text-white px-4 py-2 rounded-lg transition duration-300 text-left ${
+                    currentPage === item.id
+                      ? 'bg-blue-800 font-semibold'
+                      : 'hover:bg-blue-600'
+                  }`}
+                >
+                  {item.name}
+                </button>
+              ))}
+              <button
+                onClick={() => {
+                  handleAdminClick();
+                  setMobileMenuOpen(false);
+                }}
+                className={`text-white px-4 py-2 text-sm rounded transition duration-300 border border-blue-400 text-left ${
+                  currentPage === 'admin'
+                    ? 'bg-blue-800 font-semibold'
+                    : 'hover:bg-blue-600'
+                }`}
+              >
+                Admin
+              </button>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Login Modal */}
