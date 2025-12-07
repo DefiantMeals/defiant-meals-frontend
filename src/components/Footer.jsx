@@ -31,22 +31,6 @@ const Footer = ({ setCurrentPage }) => {
                   Menu
                 </button>
               </li>
-              <li>
-                <button
-                  onClick={() => setCurrentPage('order')}
-                  className="text-gray-300 hover:text-white transition duration-300"
-                >
-                  My Basket
-                </button>
-              </li>
-              <li>
-                <button 
-                  onClick={() => setCurrentPage('pickup')}
-                  className="text-gray-300 hover:text-white transition duration-300"
-                >
-                  Pickup
-                </button>
-              </li>
             </ul>
           </div>
           
