@@ -6,20 +6,20 @@ const Home = ({ setCurrentPage }) => {
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-blue-600 to-purple-700 text-white py-20">
         <div className="container mx-auto px-4 text-center">
-          <div className="flex items-center justify-center mb-6">
-            <img 
-              src="/Defiant_Meals_Logo.png" 
-              alt="Defiant Meals Logo" 
-              className="w-16 h-16 md:w-20 md:h-20 mr-4"
+          <div className="flex flex-col md:flex-row items-center justify-center mb-6">
+            <img
+              src="/Defiant_Meals_Logo.png"
+              alt="Defiant Meals Logo"
+              className="w-16 h-16 md:w-20 md:h-20 md:mr-4 mb-4 md:mb-0"
             />
-            <h1 className="text-5xl font-bold">Welcome to Defiant Meals</h1>
-            <img 
-              src="/Defiant_Meals_Logo.png" 
-              alt="Defiant Meals Logo" 
-              className="w-16 h-16 md:w-20 md:h-20 ml-4"
+            <h1 className="text-3xl md:text-5xl font-bold text-center">Welcome to Defiant Meals</h1>
+            <img
+              src="/Defiant_Meals_Logo.png"
+              alt="Defiant Meals Logo"
+              className="hidden md:block w-20 h-20 ml-4"
             />
           </div>
-          <p className="text-xl mb-8 max-w-2xl mx-auto">
+          <p className="text-lg md:text-xl mb-8 max-w-2xl mx-auto px-4">
             Your ultimate meal planning companion. Discover delicious recipes, plan your meals, 
             and make healthy eating simple and enjoyable.
           </p>
