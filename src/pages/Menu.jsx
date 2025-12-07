@@ -71,18 +71,47 @@ const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeF
   const calculateItemPrice = (basePrice, itemId) => {
     const options = selectedItemOptions[itemId] || {};
     let totalPrice = parseFloat(basePrice) || 0;
-    
+
     // Add flavor price if it has one
     if (options.selectedFlavor && options.selectedFlavor.price) {
       totalPrice += parseFloat(options.selectedFlavor.price) || 0;
     }
-    
+
     // Add addon prices
     if (options.selectedAddons) {
       totalPrice += options.selectedAddons.reduce((sum, addon) => sum + (parseFloat(addon.price) || 0), 0);
     }
-    
+
     return totalPrice;
+  };
+
+  // Calculate total macros including selected add-ons
+  const calculateItemMacros = (item, itemId) => {
+    const options = selectedItemOptions[itemId] || {};
+    const selectedAddons = options.selectedAddons || [];
+
+    // Parse base values (handle strings like "30g" by extracting number)
+    const parseValue = (val) => {
+      if (!val) return 0;
+      if (typeof val === 'number') return val;
+      const num = parseFloat(val);
+      return isNaN(num) ? 0 : num;
+    };
+
+    let protein = parseValue(item.protein);
+    let carbs = parseValue(item.carbs);
+    let fats = parseValue(item.fats);
+    let calories = parseValue(item.calories);
+
+    // Add selected add-ons' macros
+    selectedAddons.forEach(addon => {
+      protein += parseValue(addon.protein);
+      carbs += parseValue(addon.carbs);
+      fats += parseValue(addon.fats);
+      calories += parseValue(addon.calories);
+    });
+
+    return { protein, carbs, fats, calories, hasAddons: selectedAddons.length > 0 };
   };
 
   // Enhanced add to cart with options
@@ -232,6 +261,7 @@ const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeF
               const cartCount = getItemCartCount(item._id);
               const itemPrice = calculateItemPrice(item.price, item._id);
               const currentOptions = selectedItemOptions[item._id] || {};
+              const macros = calculateItemMacros(item, item._id);
               
               return (
                 <div 
@@ -328,30 +358,35 @@ const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeF
                     )}
 
                     {/* Nutritional Information */}
-                    <div className="mb-4 bg-gray-50 rounded-lg p-3 border border-gray-200">
+                    <div className={`mb-4 rounded-lg p-3 border ${macros.hasAddons ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'}`}>
+                      {macros.hasAddons && (
+                        <div className="text-xs text-blue-600 font-medium text-center mb-2">
+                          Total with add-ons
+                        </div>
+                      )}
                       <div className="grid grid-cols-3 gap-2 text-center">
-                        {item.protein && (
+                        {(item.protein || macros.protein > 0) && (
                           <div className="bg-white rounded-md p-2 shadow-sm">
                             <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Protein</div>
-                            <div className="text-sm font-semibold text-blue-600">{item.protein}</div>
+                            <div className="text-sm font-semibold text-blue-600">{macros.protein}g</div>
                           </div>
                         )}
-                        {item.fats && (
+                        {(item.fats || macros.fats > 0) && (
                           <div className="bg-white rounded-md p-2 shadow-sm">
                             <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Fats</div>
-                            <div className="text-sm font-semibold text-orange-600">{item.fats}</div>
+                            <div className="text-sm font-semibold text-orange-600">{macros.fats}g</div>
                           </div>
                         )}
-                        {item.carbs && (
+                        {(item.carbs || macros.carbs > 0) && (
                           <div className="bg-white rounded-md p-2 shadow-sm">
                             <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Carbs</div>
-                            <div className="text-sm font-semibold text-green-600">{item.carbs}</div>
+                            <div className="text-sm font-semibold text-green-600">{macros.carbs}g</div>
                           </div>
                         )}
                       </div>
-                      {item.calories && (
+                      {(item.calories || macros.calories > 0) && (
                         <div className="text-center mt-2 text-sm text-gray-600">
-                          {item.calories} calories
+                          {macros.calories} calories
                         </div>
                       )}
                     </div>
