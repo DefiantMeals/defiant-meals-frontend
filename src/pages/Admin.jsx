@@ -1173,6 +1173,8 @@ const Admin = () => {
                       <div className="flex justify-between items-start mb-4">
                         <div>
                           <h4 className="text-lg font-bold">Order #{order._id.slice(-6)}</h4>
+                          <h4 className="text-lg font-bold">{order.customerName || 'Guest'}</h4>
+                          <p className="text-sm text-gray-600">{order.customerEmail || 'No email'}</p>
                           <p className="text-sm text-gray-500">
                             {new Date(order.createdAt).toLocaleString()}
                           </p>
