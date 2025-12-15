@@ -146,22 +146,44 @@ const GrabAndGo = () => {
           </p>
         </div>
 
-        {/* Floating Cart Button */}
-        <button
-          onClick={() => setShowCart(true)}
-          className="fixed bottom-6 right-6 bg-green-600 text-white rounded-full shadow-2xl hover:bg-green-700 transition-all duration-300 z-50 flex items-center justify-center w-14 h-14 hover:scale-110 active:scale-95"
-        >
-          <div className="relative">
-            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-            {cartItemCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
-                {cartItemCount}
-              </span>
-            )}
+        {/* Floating Cart - Only shows when cart has items */}
+        {cartItemCount > 0 && (
+          <div className="fixed bottom-6 right-6 bg-white rounded-2xl shadow-2xl z-50 overflow-hidden border border-gray-200 transition-all duration-300 animate-in slide-in-from-bottom-4">
+            <div className="flex items-center gap-3 p-3">
+              {/* Cart Icon with Badge */}
+              <div className="relative bg-green-600 rounded-full p-2.5">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
+                  {cartItemCount}
+                </span>
+              </div>
+
+              {/* Price Display */}
+              <div className="flex flex-col">
+                <span className="text-xs text-gray-500">{cartItemCount} item{cartItemCount !== 1 ? 's' : ''}</span>
+                <span className="text-lg font-bold text-gray-800">${cartTotal.toFixed(2)}</span>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 ml-2">
+                <button
+                  onClick={() => setShowCart(true)}
+                  className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
+                >
+                  View
+                </button>
+                <button
+                  onClick={() => setShowCart(true)}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-bold transition-colors active:scale-95"
+                >
+                  Checkout
+                </button>
+              </div>
+            </div>
           </div>
-        </button>
+        )}
 
         {/* Loading State */}
         {loading && (
