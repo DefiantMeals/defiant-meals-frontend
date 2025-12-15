@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 
+const API_BASE_URL = 'https://defiant-meals-backend.onrender.com';
+
 const Contact = () => {
   const [formData, setFormData] = useState({
     name: '',
@@ -11,6 +13,7 @@ const Contact = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
+  const [submitError, setSubmitError] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -20,22 +23,53 @@ const Contact = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    // Simulate form submission
-    setTimeout(() => {
-      setSubmitMessage('Thank you for your message! We will get back to you soon.');
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        subject: '',
-        message: ''
+    setSubmitMessage('');
+    setSubmitError(false);
+
+    try {
+      // Combine subject and message for the API
+      const messageWithSubject = formData.subject
+        ? `[${formData.subject}]\n\n${formData.message}`
+        : formData.message;
+
+      const response = await fetch(`${API_BASE_URL}/api/contact`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          message: messageWithSubject
+        })
       });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setSubmitMessage('Thank you for your message! We will get back to you soon.');
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          subject: '',
+          message: ''
+        });
+      } else {
+        setSubmitError(true);
+        setSubmitMessage(data.message || 'Failed to send message. Please try again.');
+      }
+    } catch (error) {
+      console.error('Contact form error:', error);
+      setSubmitError(true);
+      setSubmitMessage('An error occurred. Please try again later.');
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -138,8 +172,12 @@ const Contact = () => {
             <h2 className="text-2xl font-semibold text-gray-900 mb-6">Send us a Message</h2>
             
             {submitMessage && (
-              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md">
-                <p className="text-green-700">{submitMessage}</p>
+              <div className={`mb-6 p-4 rounded-md ${
+                submitError
+                  ? 'bg-red-50 border border-red-200'
+                  : 'bg-green-50 border border-green-200'
+              }`}>
+                <p className={submitError ? 'text-red-700' : 'text-green-700'}>{submitMessage}</p>
               </div>
             )}
 

@@ -24,6 +24,7 @@ const Admin = () => {
     carbs: '',
     fats: '',
     calories: '',
+    servingSize: '',
     available: true,
     imageUrl: '',
     flavorOptions: [],
@@ -33,6 +34,12 @@ const Admin = () => {
     inventory: 0,
     isFood: true // Default to food item
   });
+
+  // Categories list for dropdown
+  const [categoryOptions, setCategoryOptions] = useState([]);
+
+  // Date filter for orders
+  const [selectedDate, setSelectedDate] = useState('');
 
   // Form states for categories
   const [categoryFormData, setCategoryFormData] = useState({
@@ -46,8 +53,20 @@ const Admin = () => {
   const [newFlavor, setNewFlavor] = useState({ name: '', price: 0 });
   const [newAddon, setNewAddon] = useState({ name: '', price: 0, protein: '', carbs: '', fats: '', calories: '' });
 
+  // Fetch category options for dropdown
+  const fetchCategoryOptions = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/categories`);
+      const data = await response.json();
+      setCategoryOptions(data.filter(cat => cat.available));
+    } catch (error) {
+      console.error('Error fetching category options:', error);
+    }
+  };
+
   // Fetch all data on component mount
   useEffect(() => {
+    fetchCategoryOptions(); // Always fetch categories for dropdown
     if (activeTab === 'menu') {
       fetchMenuItems();
     } else if (activeTab === 'categories') {
@@ -157,6 +176,7 @@ const Admin = () => {
       carbs: item.carbs || '',
       fats: item.fats || '',
       calories: item.calories || '',
+      servingSize: item.servingSize || '',
       available: item.available,
       imageUrl: item.imageUrl || '',
       flavorOptions: item.flavorOptions || [],
@@ -199,6 +219,7 @@ const Admin = () => {
       carbs: '',
       fats: '',
       calories: '',
+      servingSize: '',
       available: true,
       imageUrl: '',
       flavorOptions: [],
@@ -496,13 +517,17 @@ const Admin = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium mb-1">Category *</label>
-                      <input
-                        type="text"
+                      <select
                         value={formData.category}
                         onChange={(e) => setFormData({...formData, category: e.target.value})}
                         className="w-full p-2 border rounded-lg"
                         required
-                      />
+                      >
+                        <option value="">Select a category</option>
+                        {categoryOptions.map(cat => (
+                          <option key={cat._id} value={cat.name}>{cat.name}</option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1">Image URL</label>
@@ -516,7 +541,7 @@ const Admin = () => {
                   </div>
 
                   {/* Nutritional Information */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                     <div>
                       <label className="block text-sm font-medium mb-1">Protein (g)</label>
                       <input
@@ -551,6 +576,16 @@ const Admin = () => {
                         value={formData.calories}
                         onChange={(e) => setFormData({...formData, calories: e.target.value})}
                         className="w-full p-2 border rounded-lg"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Serving Size</label>
+                      <input
+                        type="text"
+                        value={formData.servingSize}
+                        onChange={(e) => setFormData({...formData, servingSize: e.target.value})}
+                        className="w-full p-2 border rounded-lg"
+                        placeholder="e.g., 8 oz"
                       />
                     </div>
                   </div>
@@ -983,10 +1018,41 @@ const Admin = () => {
           <div>
             <h2 className="text-2xl font-bold mb-6">Order Management</h2>
 
+            {/* Date Filter */}
+            <div className="bg-white p-4 rounded-lg shadow-md mb-6">
+              <div className="flex flex-wrap items-center gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Filter by Pickup Date</label>
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="p-2 border rounded-lg"
+                  />
+                </div>
+                {selectedDate && (
+                  <button
+                    onClick={() => setSelectedDate('')}
+                    className="mt-6 text-sm text-blue-600 hover:text-blue-800"
+                  >
+                    Clear Filter
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Meal Prep Totals Card */}
             {!loading && orders.length > 0 && (() => {
+              // Filter orders by selected date if set
+              const filteredOrders = selectedDate
+                ? orders.filter(order => {
+                    const orderDate = new Date(order.pickupDate).toISOString().split('T')[0];
+                    return orderDate === selectedDate;
+                  })
+                : orders;
+
               const mealTotals = {};
-              orders.forEach(order => {
+              filteredOrders.forEach(order => {
                 order.items?.forEach(item => {
                   const name = item.name || item.menuItemId?.name;
                   if (name) {
@@ -1002,20 +1068,57 @@ const Admin = () => {
                 const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
-                link.download = `meal-prep-totals-${new Date().toISOString().split('T')[0]}.csv`;
+                const dateStr = selectedDate || new Date().toISOString().split('T')[0];
+                link.download = `meal-prep-totals-${dateStr}.csv`;
+                link.click();
+              };
+
+              const downloadShoppingList = () => {
+                // Aggregate ingredients needed - this creates a simple shopping list
+                // based on meal quantities. You might want to enhance this with actual
+                // ingredient data from your menu items in the future.
+                const shoppingItems = sortedTotals.map(([name, qty]) => ({
+                  item: name,
+                  quantity: qty,
+                  // Placeholder for portions - you could enhance with actual serving data
+                  portions: qty
+                }));
+
+                const csvContent = "Item,Quantity Needed,Portions to Prepare\n" +
+                  shoppingItems.map(item => `"${item.item}",${item.quantity},${item.portions}`).join("\n");
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                const dateStr = selectedDate || new Date().toISOString().split('T')[0];
+                link.download = `shopping-list-${dateStr}.csv`;
                 link.click();
               };
 
               return (
                 <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-xl font-bold">Meal Prep Totals</h3>
-                    <button
-                      onClick={exportToCSV}
-                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-all flex items-center gap-2"
-                    >
-                      Export Totals to CSV
-                    </button>
+                  <div className="flex flex-wrap justify-between items-center mb-4 gap-4">
+                    <h3 className="text-xl font-bold">
+                      Meal Prep Totals
+                      {selectedDate && (
+                        <span className="text-sm font-normal text-gray-600 ml-2">
+                          (for {new Date(selectedDate + 'T00:00:00').toLocaleDateString()})
+                        </span>
+                      )}
+                    </h3>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={downloadShoppingList}
+                        className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-all flex items-center gap-2"
+                      >
+                        Download Shopping List
+                      </button>
+                      <button
+                        onClick={exportToCSV}
+                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-all flex items-center gap-2"
+                      >
+                        Export Totals to CSV
+                      </button>
+                    </div>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full">
@@ -1026,17 +1129,26 @@ const Admin = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {sortedTotals.map(([name, quantity]) => (
-                          <tr key={name} className="border-b hover:bg-gray-50">
-                            <td className="py-2 px-4">{name}</td>
-                            <td className="text-right py-2 px-4 font-semibold">{quantity}</td>
+                        {sortedTotals.length === 0 ? (
+                          <tr>
+                            <td colSpan="2" className="text-center py-4 text-gray-500">
+                              No orders for this date
+                            </td>
                           </tr>
-                        ))}
+                        ) : (
+                          sortedTotals.map(([name, quantity]) => (
+                            <tr key={name} className="border-b hover:bg-gray-50">
+                              <td className="py-2 px-4">{name}</td>
+                              <td className="text-right py-2 px-4 font-semibold">{quantity}</td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>
                   <p className="text-sm text-gray-500 mt-4">
-                    Totals based on {orders.length} order{orders.length !== 1 ? 's' : ''}
+                    Totals based on {filteredOrders.length} order{filteredOrders.length !== 1 ? 's' : ''}
+                    {selectedDate && ` for ${new Date(selectedDate + 'T00:00:00').toLocaleDateString()}`}
                   </p>
                 </div>
               );
@@ -1048,7 +1160,13 @@ const Admin = () => {
               <p className="text-center text-gray-500">No orders yet.</p>
             ) : (
               <div className="space-y-4">
-                {orders.map(order => (
+                {orders
+                  .filter(order => {
+                    if (!selectedDate) return true;
+                    const orderDate = new Date(order.pickupDate).toISOString().split('T')[0];
+                    return orderDate === selectedDate;
+                  })
+                  .map(order => (
                   <div key={order._id} className="bg-white p-6 rounded-lg shadow-md">
                     <div className="flex justify-between items-start mb-4">
                       <div>
