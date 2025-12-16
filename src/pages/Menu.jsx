@@ -364,11 +364,6 @@ const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeF
                           Total with add-ons
                         </div>
                       )}
-                      {item.servingSize && (
-                        <div className="text-center text-sm text-gray-600 mb-2">
-                          Serving Size: <span className="font-medium">{item.servingSize}</span>
-                        </div>
-                      )}
                       <div className="grid grid-cols-3 gap-2 text-center">
                         {(item.protein || macros.protein > 0) && (
                           <div className="bg-white rounded-md p-2 shadow-sm">
@@ -389,9 +384,11 @@ const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeF
                           </div>
                         )}
                       </div>
-                      {(item.calories || macros.calories > 0) && (
+                      {((item.calories || macros.calories > 0) || item.servingSize) && (
                         <div className="text-center mt-2 text-sm text-gray-600">
-                          {macros.calories} calories
+                          {(item.calories || macros.calories > 0) && <span>{macros.calories} calories</span>}
+                          {(item.calories || macros.calories > 0) && item.servingSize && <span> | </span>}
+                          {item.servingSize && <span>Serving Size: {item.servingSize}</span>}
                         </div>
                       )}
                     </div>
