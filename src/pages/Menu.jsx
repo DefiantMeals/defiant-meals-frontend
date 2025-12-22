@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 const API_BASE_URL = 'https://defiant-meals-backend.onrender.com';
 
-const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeFromCart }) => {
+const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeFromCart, setCurrentPage }) => {
   const [menuItems, setMenuItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All Items');
@@ -488,7 +488,7 @@ const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeF
                   View
                 </button>
                 <button
-                  onClick={() => setShowCart(true)}
+                  onClick={() => setCurrentPage('order')}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold transition-colors active:scale-95"
                 >
                   Checkout
@@ -591,7 +591,7 @@ const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeF
                   <button
                     onClick={() => {
                       setShowCart(false);
-                      window.location.href = '/checkout';
+                      setCurrentPage('order');
                     }}
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold text-base transition-all duration-300 active:scale-95"
                   >

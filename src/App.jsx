@@ -116,11 +116,12 @@ const App = () => {
       case 'home':
         return <Home setCurrentPage={setCurrentPage} />;
       case 'menu':
-        return <Menu 
+        return <Menu
           handleAddToCart={handleAddToCart}
           cartItems={cartItems}
           updateCartItemQuantity={handleUpdateQuantity}
           removeFromCart={handleRemoveFromCart}
+          setCurrentPage={setCurrentPage}
         />;
       case 'order':
         return <Order 
