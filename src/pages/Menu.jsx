@@ -276,6 +276,10 @@ const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeF
               const itemPrice = calculateItemPrice(item.price, item._id);
               const currentOptions = selectedItemOptions[item._id] || {};
               const macros = calculateItemMacros(item, item._id);
+
+              // Check if flavor selection is required but not selected
+              const hasFlavorOptions = item.flavorOptions && item.flavorOptions.length > 0;
+              const flavorRequired = hasFlavorOptions && !currentOptions.selectedFlavor;
               
               return (
                 <div 
@@ -309,13 +313,15 @@ const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeF
                     <p className="text-gray-600 mb-4">{item.description}</p>
 
                     {/* Flavor Options */}
-                    {item.flavorOptions && item.flavorOptions.length > 0 && (
+                    {hasFlavorOptions && (
                       <div className="mb-4">
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Choose Flavor:
+                          Choose Flavor: <span className="text-red-500">*</span>
                         </label>
-                        <select 
-                          className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        <select
+                          className={`w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                            flavorRequired ? 'border-orange-400 bg-orange-50' : 'border-gray-300'
+                          }`}
                           value={currentOptions.selectedFlavor?.name || ''}
                           onChange={(e) => {
                             const flavor = item.flavorOptions.find(f => f.name === e.target.value);
@@ -329,6 +335,9 @@ const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeF
                             </option>
                           ))}
                         </select>
+                        {flavorRequired && (
+                          <p className="text-xs text-orange-600 mt-1">Please select a flavor to add to cart</p>
+                        )}
                       </div>
                     )}
 
@@ -439,8 +448,20 @@ const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeF
                           {cartCount}
                         </span>
                         <button
-                          onClick={() => handleQuantityChange(item, 1)}
-                          className="w-6 h-6 rounded-full bg-green-500 hover:bg-green-600 flex items-center justify-center text-white font-bold text-sm transition-all active:scale-90"
+                          onClick={() => {
+                            if (flavorRequired) {
+                              alert('Please select a flavor first');
+                              return;
+                            }
+                            handleQuantityChange(item, 1);
+                          }}
+                          className={`w-6 h-6 rounded-full flex items-center justify-center text-white font-bold text-sm transition-all ${
+                            flavorRequired
+                              ? 'bg-gray-400 cursor-not-allowed'
+                              : 'bg-green-500 hover:bg-green-600 active:scale-90'
+                          }`}
+                          disabled={flavorRequired}
+                          title={flavorRequired ? 'Select a flavor first' : 'Add to cart'}
                         >
                           +
                         </button>
