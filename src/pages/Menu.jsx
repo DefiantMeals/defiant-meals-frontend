@@ -15,30 +15,39 @@ const Menu = ({ handleAddToCart, cartItems = [], updateCartItemQuantity, removeF
   const cartItemCount = cartItems.reduce((count, item) => count + (item.quantity || 1), 0);
   const cartTotal = cartItems.reduce((total, item) => total + (item.price * (item.quantity || 1)), 0);
 
-  // Get count of specific item in cart - use parent cart state
+  // Get count of specific item in cart - match by customizationId to handle flavors correctly
   const getItemCartCount = (itemId) => {
-    const cartItem = cartItems.find(item => item.originalId === itemId || item.id === itemId);
+    const options = selectedItemOptions[itemId] || {};
+    // Build the same customizationId format used when adding to cart
+    const customizationId = `${itemId}_${options.selectedFlavor?.name || 'no-flavor'}_${(options.selectedAddons || []).map(a => a.name).sort().join('_')}`;
+
+    // Look for exact match by customizationId
+    const cartItem = cartItems.find(item => item.id === customizationId);
     return cartItem ? cartItem.quantity || 1 : 0;
   };
 
   // Handle quantity changes - update parent cart state
   const handleQuantityChange = (item, change) => {
+    const options = selectedItemOptions[item._id] || {};
+    // Build the same customizationId format used when adding to cart
+    const customizationId = `${item._id}_${options.selectedFlavor?.name || 'no-flavor'}_${(options.selectedAddons || []).map(a => a.name).sort().join('_')}`;
+
     const currentCount = getItemCartCount(item._id);
     const newCount = currentCount + change;
-    
+
     if (newCount <= 0) {
-      // Find the cart item to remove
-      const cartItem = cartItems.find(cartItem => cartItem.originalId === item._id || cartItem.id === item._id);
+      // Find the cart item to remove by customizationId
+      const cartItem = cartItems.find(cartItem => cartItem.id === customizationId);
       if (cartItem) {
-        removeFromCart(cartItem.id || cartItem.originalId);
+        removeFromCart(cartItem.id);
       }
     } else if (currentCount === 0) {
       handleAddToCartWithOptions(item);
     } else {
-      // Find the cart item to update
-      const cartItem = cartItems.find(cartItem => cartItem.originalId === item._id || cartItem.id === item._id);
+      // Find the cart item to update by customizationId
+      const cartItem = cartItems.find(cartItem => cartItem.id === customizationId);
       if (cartItem) {
-        updateCartItemQuantity(cartItem.id || cartItem.originalId, newCount);
+        updateCartItemQuantity(cartItem.id, newCount);
       }
     }
   };
