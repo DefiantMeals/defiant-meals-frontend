@@ -202,7 +202,7 @@ const GrabAndGo = () => {
 
         {/* Menu Items - Horizontal Bars */}
         {!loading && availableItems.length > 0 && (
-          <div className="space-y-3">
+          <div className="space-y-3 pb-32">
             {availableItems.map(item => {
               const qty = getCartQuantity(item._id);
               const macros = formatMacros(item);
