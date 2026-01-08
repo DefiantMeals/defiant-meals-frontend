@@ -232,7 +232,8 @@ const Pickup = ({ orderData, setCurrentPage, setOrderData, setPickupDetails }) =
     setPickupDetails({
       date: selectedDate,
       displayDate: selectedDateObj?.displayDate || selectedDate,
-      time: selectedTime
+      time: selectedTime,
+      notes: orderData?.customerNotes || ''
     });
 
     // Navigate to payment
