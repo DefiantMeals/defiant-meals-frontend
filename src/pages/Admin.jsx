@@ -1195,13 +1195,12 @@ const Admin = () => {
                       <h4 className="font-semibold mb-2">Items:</h4>
                       {order.items.map((item, index) => (
                         <div key={index} className="text-sm text-gray-700 mb-1">
-                          {item.quantity}x {item.name} - ${(parseFloat(item.price) || 0).toFixed(2)}
-                          {item.customizations && (
-                            <span className="text-gray-500 ml-2">
-                              ({item.customizations.flavor && `Flavor: ${item.customizations.flavor}`}
-                              {item.customizations.addons && item.customizations.addons.length > 0 && `, Add-ons: ${item.customizations.addons.join(', ')}`})
-                            </span>
-                          )}
+                          <span>
+                            {item.quantity}x {item.name}
+                            {item.selectedFlavor?.name && ` (${item.selectedFlavor.name})`}
+                            {item.selectedAddons?.length > 0 && ` + ${item.selectedAddons.map(a => a.name).join(', ')}`}
+                          </span>
+                          <span className="ml-2">- ${(parseFloat(item.price) || 0).toFixed(2)}</span>
                         </div>
                       ))}
                     </div>
@@ -1321,7 +1320,12 @@ const Admin = () => {
                         <h5 className="font-semibold mb-2">Items:</h5>
                         {order.items.map((item, index) => (
                           <div key={index} className="text-sm text-gray-700 mb-1">
-                            {item.quantity}x {item.name} - ${(parseFloat(item.price) || 0).toFixed(2)}
+                            <span>
+                              {item.quantity}x {item.name}
+                              {item.selectedFlavor?.name && ` (${item.selectedFlavor.name})`}
+                              {item.selectedAddons?.length > 0 && ` + ${item.selectedAddons.map(a => a.name).join(', ')}`}
+                            </span>
+                            <span className="ml-2">- ${(parseFloat(item.price) || 0).toFixed(2)}</span>
                           </div>
                         ))}
                       </div>
