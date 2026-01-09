@@ -1176,12 +1176,6 @@ const Admin = () => {
                         <p className="text-sm text-gray-600 mt-2">
                           Pickup: {new Date(order.pickupDate).toLocaleDateString()} at {order.pickupTime}
                         </p>
-                        {order.customerNotes && (
-                          <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
-                            <strong className="text-yellow-800">Notes:</strong>
-                            <span className="text-yellow-700 ml-1">{order.customerNotes}</span>
-                          </div>
-                        )}
                       </div>
                       <div className="text-right">
                         <p className="text-2xl font-bold text-blue-600">${(parseFloat(order.totalAmount) || 0).toFixed(2)}</p>
@@ -1204,6 +1198,13 @@ const Admin = () => {
                         </div>
                       ))}
                     </div>
+
+                    {order.customerNotes && (
+                      <div className="mb-4 p-3 bg-yellow-50 border-2 border-yellow-400 rounded-lg">
+                        <p className="font-bold text-yellow-800 text-sm uppercase tracking-wide">Special Instructions:</p>
+                        <p className="text-yellow-900 mt-1">{order.customerNotes}</p>
+                      </div>
+                    )}
 
                     <div className="flex justify-between items-center">
                       <select
