@@ -13,6 +13,7 @@ const Admin = () => {
   const [editingCategory, setEditingCategory] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showAddCategoryForm, setShowAddCategoryForm] = useState(false);
+  const [showScrollButton, setShowScrollButton] = useState(false);
 
   // Form states for menu items
   const [formData, setFormData] = useState({
@@ -82,6 +83,12 @@ const Admin = () => {
       fetchMenuItems(); // Also fetch menu items to show Grab & Go items
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    const handleScroll = () => setShowScrollButton(window.scrollY > 300);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const fetchMenuItems = async () => {
     setLoading(true);
@@ -430,7 +437,7 @@ const Admin = () => {
 
   return (
     <>
-      {window.scrollY > 300 && (
+      {showScrollButton && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           className="fixed bottom-8 right-8 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg z-50 text-2xl"
