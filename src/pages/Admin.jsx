@@ -429,6 +429,15 @@ const Admin = () => {
   };
 
   return (
+    <>
+      {window.scrollY > 300 && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="fixed bottom-8 right-8 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg z-50 text-2xl"
+        >
+          ↑
+        </button>
+      )}
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4">
         <h1 className="text-4xl font-bold text-center mb-8">Admin Dashboard</h1>
@@ -850,9 +859,11 @@ const Admin = () => {
             {/* Menu Items List */}
             {loading ? (
               <p className="text-center text-gray-500">Loading...</p>
-            ) : (
+            ) : (() => {
+              const sortedMenuItems = [...menuItems].sort((a, b) => a.name.localeCompare(b.name));
+              return (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {menuItems.map(item => (
+                {sortedMenuItems.map(item => (
                   <div key={item._id} className="bg-white p-6 rounded-lg shadow-md">
                     <div className="flex gap-4 mb-3 p-2 bg-gray-50 rounded">
                       <label className="flex items-center gap-2 cursor-pointer">
@@ -934,7 +945,8 @@ const Admin = () => {
                   </div>
                 ))}
               </div>
-            )}
+              );
+            })()}
           </div>
         )}
 
@@ -1441,6 +1453,7 @@ const Admin = () => {
         )}
       </div>
     </div>
+    </>
   );
 };
 
