@@ -41,6 +41,10 @@ const Admin = () => {
   // Date filter for orders
   const [selectedDate, setSelectedDate] = useState('');
 
+  // Shopping list date range
+  const [shoppingListStartDate, setShoppingListStartDate] = useState('');
+  const [shoppingListEndDate, setShoppingListEndDate] = useState('');
+
   // Form states for categories
   const [categoryFormData, setCategoryFormData] = useState({
     name: '',
@@ -407,6 +411,20 @@ const Admin = () => {
     } catch (error) {
       console.error('Error updating inventory:', error);
       alert('Error updating inventory');
+    }
+  };
+
+  // Toggle availability for pre-orders and grab & go
+  const handleAvailabilityToggle = async (itemId, field, value) => {
+    try {
+      await fetch(`${API_BASE_URL}/api/menu/${itemId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: value })
+      });
+      fetchMenuItems();
+    } catch (error) {
+      console.error('Error updating availability:', error);
     }
   };
 
@@ -836,6 +854,27 @@ const Admin = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {menuItems.map(item => (
                   <div key={item._id} className="bg-white p-6 rounded-lg shadow-md">
+                    <div className="flex gap-4 mb-3 p-2 bg-gray-50 rounded">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={item.availableForPreorders}
+                          onChange={(e) => handleAvailabilityToggle(item._id, 'availableForPreorders', e.target.checked)}
+                          className="w-5 h-5"
+                        />
+                        <span className="text-sm font-medium">Pre-orders</span>
+                      </label>
+
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={item.availableForGrabAndGo}
+                          onChange={(e) => handleAvailabilityToggle(item._id, 'availableForGrabAndGo', e.target.checked)}
+                          className="w-5 h-5"
+                        />
+                        <span className="text-sm font-medium">Grab & Go</span>
+                      </label>
+                    </div>
                     {item.imageUrl && (
                       <img
                         src={item.imageUrl}
@@ -1074,13 +1113,34 @@ const Admin = () => {
               };
 
               const downloadShoppingList = () => {
-                // Aggregate ingredients needed - this creates a simple shopping list
-                // based on meal quantities. You might want to enhance this with actual
-                // ingredient data from your menu items in the future.
-                const shoppingItems = sortedTotals.map(([name, qty]) => ({
+                // Filter orders by shopping list date range
+                const shoppingListOrders = orders.filter(order => {
+                  const orderDate = new Date(order.pickupDate).toISOString().split('T')[0];
+                  if (shoppingListStartDate && shoppingListEndDate) {
+                    return orderDate >= shoppingListStartDate && orderDate <= shoppingListEndDate;
+                  } else if (shoppingListStartDate) {
+                    return orderDate >= shoppingListStartDate;
+                  } else if (shoppingListEndDate) {
+                    return orderDate <= shoppingListEndDate;
+                  }
+                  return true;
+                });
+
+                // Aggregate meal totals for the date range
+                const shoppingMealTotals = {};
+                shoppingListOrders.forEach(order => {
+                  order.items?.forEach(item => {
+                    const name = item.name || item.menuItemId?.name;
+                    if (name) {
+                      shoppingMealTotals[name] = (shoppingMealTotals[name] || 0) + item.quantity;
+                    }
+                  });
+                });
+                const shoppingTotals = Object.entries(shoppingMealTotals).sort((a, b) => b[1] - a[1]);
+
+                const shoppingItems = shoppingTotals.map(([name, qty]) => ({
                   item: name,
                   quantity: qty,
-                  // Placeholder for portions - you could enhance with actual serving data
                   portions: qty
                 }));
 
@@ -1089,7 +1149,9 @@ const Admin = () => {
                 const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
-                const dateStr = selectedDate || new Date().toISOString().split('T')[0];
+                const dateStr = shoppingListStartDate && shoppingListEndDate
+                  ? `${shoppingListStartDate}-to-${shoppingListEndDate}`
+                  : shoppingListStartDate || shoppingListEndDate || new Date().toISOString().split('T')[0];
                 link.download = `shopping-list-${dateStr}.csv`;
                 link.click();
               };
@@ -1105,18 +1167,41 @@ const Admin = () => {
                         </span>
                       )}
                     </h3>
-                    <div className="flex gap-2">
+                    <button
+                      onClick={exportToCSV}
+                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-all flex items-center gap-2"
+                    >
+                      Export Totals to CSV
+                    </button>
+                  </div>
+
+                  {/* Shopping List Date Range */}
+                  <div className="border-t pt-4 mt-4">
+                    <h4 className="font-semibold mb-3">Shopping List Date Range</h4>
+                    <div className="flex gap-4 items-center mb-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Start Date</label>
+                        <input
+                          type="date"
+                          value={shoppingListStartDate}
+                          onChange={(e) => setShoppingListStartDate(e.target.value)}
+                          className="border rounded px-3 py-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">End Date</label>
+                        <input
+                          type="date"
+                          value={shoppingListEndDate}
+                          onChange={(e) => setShoppingListEndDate(e.target.value)}
+                          className="border rounded px-3 py-2"
+                        />
+                      </div>
                       <button
                         onClick={downloadShoppingList}
-                        className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-all flex items-center gap-2"
+                        className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-all mt-5"
                       >
                         Download Shopping List
-                      </button>
-                      <button
-                        onClick={exportToCSV}
-                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-all flex items-center gap-2"
-                      >
-                        Export Totals to CSV
                       </button>
                     </div>
                   </div>
