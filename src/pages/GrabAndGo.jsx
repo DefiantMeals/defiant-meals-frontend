@@ -212,69 +212,71 @@ const GrabAndGo = () => {
                   key={item._id} 
                   className="bg-green-600 hover:bg-green-700 rounded-xl shadow-lg overflow-hidden transition-all duration-200 active:scale-[0.99]"
                 >
-                  <div className="flex items-center p-2 md:p-3">
-                    {/* Thumbnail - Hard Left */}
-                    <div className="flex-shrink-0 w-14 h-14 md:w-16 md:h-16 rounded-lg overflow-hidden bg-green-500 mr-3">
-                      {item.imageUrl ? (
-                        <img
-                          src={item.imageUrl}
-                          alt={item.name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                            e.target.parentNode.innerHTML = '<div class="w-full h-full flex items-center justify-center text-white text-2xl">🍽️</div>';
-                          }}
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-white text-2xl">
-                          🍽️
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Item Name - constrained width, wraps */}
-                    <div className="w-24 md:w-32 flex-shrink-0 mr-2">
-                      <h3 className="text-white font-bold text-sm md:text-base leading-tight">
-                        {item.name}
-                      </h3>
-                    </div>
-
-                    {/* Macros */}
-                    {macros && (
-                      <div className="flex-1 min-w-0 mr-2">
-                        <p className="text-green-100 text-xs md:text-sm whitespace-nowrap">
-                          {macros}
-                        </p>
+                  <div className="flex items-center justify-between w-full p-2 md:p-3">
+                    {/* Left side: Image + Name + Macros */}
+                    <div className="flex items-center gap-3 min-w-0">
+                      {/* Thumbnail */}
+                      <div className="flex-shrink-0 w-14 h-14 md:w-16 md:h-16 rounded-lg overflow-hidden bg-green-500">
+                        {item.imageUrl ? (
+                          <img
+                            src={item.imageUrl}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.parentNode.innerHTML = '<div class="w-full h-full flex items-center justify-center text-white text-2xl">🍽️</div>';
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-white text-2xl">
+                            🍽️
+                          </div>
+                        )}
                       </div>
-                    )}
 
-                    {/* Price */}
-                    <div className="flex-shrink-0 text-white font-bold text-sm md:text-base mr-3">
-                      ${item.price.toFixed(2)}
+                      {/* Name and Macros */}
+                      <div className="min-w-0">
+                        <h3 className="text-white font-bold text-sm md:text-base leading-tight">
+                          {item.name}
+                        </h3>
+                        {macros && (
+                          <p className="text-green-100 text-xs md:text-sm">
+                            {macros}
+                          </p>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Quantity Controls */}
-                    <div className="flex-shrink-0 flex items-center bg-white rounded-full px-1.5 py-1">
-                      <button
-                        onClick={() => updateQuantity(item, -1)}
-                        className={`w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all active:scale-90 ${
-                          qty === 0 
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                            : 'bg-red-500 hover:bg-red-600 text-white'
-                        }`}
-                        disabled={qty === 0}
-                      >
-                        -
-                      </button>
-                      <span className="text-gray-800 font-bold min-w-[24px] md:min-w-[28px] text-center text-sm md:text-base">
-                        {qty}
-                      </span>
-                      <button
-                        onClick={() => updateQuantity(item, 1)}
-                        className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-green-500 hover:bg-green-600 flex items-center justify-center text-white font-bold text-sm transition-all active:scale-90"
-                      >
-                        +
-                      </button>
+                    {/* Right side: Price + Quantity Controls */}
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      {/* Price */}
+                      <div className="text-white font-bold text-sm md:text-base">
+                        ${item.price.toFixed(2)}
+                      </div>
+
+                      {/* Quantity Controls */}
+                      <div className="flex items-center bg-white rounded-full px-1.5 py-1">
+                        <button
+                          onClick={() => updateQuantity(item, -1)}
+                          className={`w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all active:scale-90 ${
+                            qty === 0
+                              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                              : 'bg-red-500 hover:bg-red-600 text-white'
+                          }`}
+                          disabled={qty === 0}
+                        >
+                          -
+                        </button>
+                        <span className="text-gray-800 font-bold min-w-[24px] md:min-w-[28px] text-center text-sm md:text-base">
+                          {qty}
+                        </span>
+                        <button
+                          onClick={() => updateQuantity(item, 1)}
+                          className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-green-500 hover:bg-green-600 flex items-center justify-center text-white font-bold text-sm transition-all active:scale-90"
+                        >
+                          +
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
